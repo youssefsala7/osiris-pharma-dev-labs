@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Shield,
   CreditCard,
+  Activity,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -41,6 +42,7 @@ const menuItems = [
   { id: "expired-medicines", label: "Expired Medicines", icon: AlertTriangle },
   { id: "user-management", label: "User Management", icon: UserCheck },
   { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "audit-logs", label: "Audit Logs", icon: Activity },
   { id: "reports", label: "Reports", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
