@@ -7,6 +7,9 @@ import { Sales } from "@/components/Sales";
 import { Prescriptions } from "@/components/Prescriptions";
 import { Reports } from "@/components/Reports";
 import { Settings } from "@/components/Settings";
+import { Suppliers } from "@/components/Suppliers";
+import { PurchaseOrders } from "@/components/PurchaseOrders";
+import { ExpiredMedicines } from "@/components/ExpiredMedicines";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -23,6 +26,12 @@ const Index = () => {
         return <Sales />;
       case "prescriptions":
         return <Prescriptions />;
+      case "suppliers":
+        return <Suppliers />;
+      case "purchase-orders":
+        return <PurchaseOrders />;
+      case "expired-medicines":
+        return <ExpiredMedicines />;
       case "reports":
         return <Reports />;
       case "settings":

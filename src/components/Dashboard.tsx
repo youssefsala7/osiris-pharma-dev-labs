@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Package,
   Users,
@@ -7,6 +8,10 @@ import {
   TrendingUp,
   AlertTriangle,
   DollarSign,
+  FileText,
+  Truck,
+  Calendar,
+  Plus,
 } from "lucide-react";
 
 export const Dashboard = () => {
@@ -55,11 +60,36 @@ export const Dashboard = () => {
     { id: "INV-004", customer: "Sarah Wilson", amount: "$156.75", time: "2 hours ago" },
   ];
 
+  const pendingOrders = [
+    { id: "PO-001", supplier: "PharmaCorp Ltd", amount: "$1,971.00", status: "Confirmed" },
+    { id: "PO-002", supplier: "MediSupply Inc", amount: "$1,620.00", status: "Sent" },
+    { id: "PO-003", supplier: "VitaHealth Distributors", amount: "$1,296.00", status: "Delivered" },
+  ];
+
+  const expiringMedicines = [
+    { name: "Vitamin C 500mg", expiryDate: "2024-02-28", daysLeft: 13 },
+    { name: "Cough Syrup", expiryDate: "2024-03-15", daysLeft: 28 },
+    { name: "Eye Drops", expiryDate: "2024-03-20", daysLeft: 33 },
+  ];
+
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome back! Here's what's happening at your pharmacy.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here's what's happening at your pharmacy.</p>
+        </div>
+        
+        <div className="flex space-x-2">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Quick Sale
+          </Button>
+          <Button variant="outline">
+            <FileText className="h-4 w-4 mr-2" />
+            New Prescription
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -133,6 +163,86 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pending Purchase Orders */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Truck className="h-5 w-5 mr-2" />
+              Pending Purchase Orders
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {pendingOrders.map((order, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{order.id}</p>
+                    <p className="text-sm text-gray-600">{order.supplier}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900">{order.amount}</p>
+                    <Badge variant={order.status === "Delivered" ? "default" : "secondary"}>
+                      {order.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Expiring Medicines */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="h-5 w-5 text-orange-500 mr-2" />
+              Expiring Soon
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {expiringMedicines.map((medicine, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{medicine.name}</p>
+                    <p className="text-sm text-gray-600">Expires: {medicine.expiryDate}</p>
+                  </div>
+                  <Badge variant="secondary">{medicine.daysLeft} days left</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <Package className="h-6 w-6 mb-2" />
+              <span>Add Medicine</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <Users className="h-6 w-6 mb-2" />
+              <span>New Customer</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <FileText className="h-6 w-6 mb-2" />
+              <span>Create Order</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <TrendingUp className="h-6 w-6 mb-2" />
+              <span>View Reports</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
