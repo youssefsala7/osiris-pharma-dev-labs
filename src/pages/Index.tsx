@@ -63,7 +63,9 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
       <div className="flex-1 overflow-auto">
-        {renderPage()}
+        <main className="w-full">
+          {renderPage()}
+        </main>
       </div>
     </div>
   );
