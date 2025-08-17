@@ -18,6 +18,8 @@ import {
   Receipt,
   Bell,
   AlertTriangle,
+  Shield,
+  CreditCard,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -34,6 +36,8 @@ const menuItems = [
   { id: "suppliers", label: "Suppliers", icon: Truck },
   { id: "purchase-orders", label: "Purchase Orders", icon: ClipboardList },
   { id: "billing", label: "Billing", icon: Receipt },
+  { id: "insurance-claims", label: "Insurance Claims", icon: CreditCard },
+  { id: "drug-interactions", label: "Drug Interactions", icon: Shield },
   { id: "expired-medicines", label: "Expired Medicines", icon: AlertTriangle },
   { id: "user-management", label: "User Management", icon: UserCheck },
   { id: "notifications", label: "Notifications", icon: Bell },

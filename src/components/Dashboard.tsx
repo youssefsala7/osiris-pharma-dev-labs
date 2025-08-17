@@ -12,6 +12,8 @@ import {
   Truck,
   Calendar,
   Plus,
+  Shield,
+  CreditCard,
 } from "lucide-react";
 
 export const Dashboard = () => {
@@ -72,6 +74,18 @@ export const Dashboard = () => {
     { name: "Eye Drops", expiryDate: "2024-03-20", daysLeft: 33 },
   ];
 
+  const drugInteractionAlerts = [
+    { patient: "John Doe", drugs: "Warfarin + Aspirin", severity: "Major" },
+    { patient: "Mary Johnson", drugs: "Digoxin + Amiodarone", severity: "Major" },
+    { patient: "Robert Smith", drugs: "Metformin + Contrast", severity: "Moderate" },
+  ];
+
+  const insuranceClaims = [
+    { id: "CLM-001", patient: "John Doe", amount: "$125.50", status: "Approved" },
+    { id: "CLM-002", patient: "Jane Smith", amount: "$89.75", status: "Rejected" },
+    { id: "CLM-003", patient: "Mike Johnson", amount: "$245.00", status: "Under Review" },
+  ];
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -116,7 +130,7 @@ export const Dashboard = () => {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Low Stock Alert */}
         <Card>
           <CardHeader>
@@ -134,6 +148,31 @@ export const Dashboard = () => {
                     <p className="text-sm text-gray-600">Min stock: {item.minStock}</p>
                   </div>
                   <Badge variant="destructive">{item.stock} left</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Drug Interaction Alerts */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Shield className="h-5 w-5 text-orange-500 mr-2" />
+              Drug Interaction Alerts
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {drugInteractionAlerts.map((alert, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{alert.patient}</p>
+                    <p className="text-sm text-gray-600">{alert.drugs}</p>
+                  </div>
+                  <Badge variant={alert.severity === "Major" ? "destructive" : "secondary"}>
+                    {alert.severity}
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -164,7 +203,7 @@ export const Dashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pending Purchase Orders */}
         <Card>
           <CardHeader>
@@ -185,6 +224,37 @@ export const Dashboard = () => {
                     <p className="font-medium text-gray-900">{order.amount}</p>
                     <Badge variant={order.status === "Delivered" ? "default" : "secondary"}>
                       {order.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Insurance Claims */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CreditCard className="h-5 w-5 mr-2" />
+              Insurance Claims
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {insuranceClaims.map((claim, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{claim.id}</p>
+                    <p className="text-sm text-gray-600">{claim.patient}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900">{claim.amount}</p>
+                    <Badge variant={
+                      claim.status === "Approved" ? "default" : 
+                      claim.status === "Rejected" ? "destructive" : "secondary"
+                    }>
+                      {claim.status}
                     </Badge>
                   </div>
                 </div>
@@ -223,7 +293,7 @@ export const Dashboard = () => {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
               <Package className="h-6 w-6 mb-2" />
               <span>Add Medicine</span>
@@ -235,6 +305,14 @@ export const Dashboard = () => {
             <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
               <FileText className="h-6 w-6 mb-2" />
               <span>Create Order</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <Shield className="h-6 w-6 mb-2" />
+              <span>Check Interactions</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <CreditCard className="h-6 w-6 mb-2" />
+              <span>Submit Claim</span>
             </Button>
             <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
               <TrendingUp className="h-6 w-6 mb-2" />

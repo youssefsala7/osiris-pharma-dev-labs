@@ -13,6 +13,8 @@ import { ExpiredMedicines } from "@/components/ExpiredMedicines";
 import { UserManagement } from "@/components/UserManagement";
 import { Billing } from "@/components/Billing";
 import { Notifications } from "@/components/Notifications";
+import { DrugInteractions } from "@/components/DrugInteractions";
+import { InsuranceClaims } from "@/components/InsuranceClaims";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -35,6 +37,10 @@ const Index = () => {
         return <PurchaseOrders />;
       case "billing":
         return <Billing />;
+      case "insurance-claims":
+        return <InsuranceClaims />;
+      case "drug-interactions":
+        return <DrugInteractions />;
       case "expired-medicines":
         return <ExpiredMedicines />;
       case "user-management":
