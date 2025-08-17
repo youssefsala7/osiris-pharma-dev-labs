@@ -14,6 +14,10 @@ import {
   ChevronRight,
   Truck,
   ClipboardList,
+  UserCheck,
+  Receipt,
+  Bell,
+  AlertTriangle,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -29,6 +33,10 @@ const menuItems = [
   { id: "sales", label: "Sales", icon: ShoppingCart },
   { id: "suppliers", label: "Suppliers", icon: Truck },
   { id: "purchase-orders", label: "Purchase Orders", icon: ClipboardList },
+  { id: "billing", label: "Billing", icon: Receipt },
+  { id: "expired-medicines", label: "Expired Medicines", icon: AlertTriangle },
+  { id: "user-management", label: "User Management", icon: UserCheck },
+  { id: "notifications", label: "Notifications", icon: Bell },
   { id: "reports", label: "Reports", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
