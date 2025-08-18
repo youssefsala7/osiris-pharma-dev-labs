@@ -1,20 +1,29 @@
+import { motion } from "framer-motion";
 import { ReactNode } from "react";
-import { FadeIn } from "./fade-in";
 
 interface StaggerContainerProps {
-  children: ReactNode[];
-  staggerDelay?: number;
+  children: ReactNode;
   className?: string;
+  staggerDelay?: number;
 }
 
-export const StaggerContainer = ({ children, staggerDelay = 100, className }: StaggerContainerProps) => {
+export const StaggerContainer = ({ children, className = "", staggerDelay = 0.1 }: StaggerContainerProps) => {
   return (
-    <div className={className}>
-      {children.map((child, index) => (
-        <FadeIn key={index} delay={index * staggerDelay}>
-          {child}
-        </FadeIn>
-      ))}
-    </div>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: {
+            staggerChildren: staggerDelay
+          }
+        }
+      }}
+      className={className}
+    >
+      {children}
+    </motion.div>
   );
 };

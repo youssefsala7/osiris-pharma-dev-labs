@@ -15,7 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, Edit, Trash2, Users, Shield, UserCheck, UserX } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
+import { StaggerContainer } from "@/components/ui/stagger-container";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { showSuccess } from "@/utils/toast";
+import { motion } from "framer-motion";
 
 interface User {
   id: string;
@@ -32,6 +37,7 @@ interface User {
 
 export const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([
     {
       id: "USR-001",
@@ -93,8 +99,12 @@ export const UserManagement = () => {
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (newUser.username && newUser.fullName && newUser.email && newUser.role) {
+      setIsLoading(true);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const user: User = {
         id: `USR-${String(users.length + 1).padStart(3, '0')}`,
         username: newUser.username,
@@ -108,9 +118,10 @@ export const UserManagement = () => {
         permissions: getDefaultPermissions(newUser.role),
       };
       
-      setUsers([...users, user]);
+      setUsers([user, ...users]);
       setNewUser({});
       setIsAddDialogOpen(false);
+      setIsLoading(false);
       showSuccess("User added successfully!");
     }
   };
@@ -150,222 +161,255 @@ export const UserManagement = () => {
   const totalUsers = users.length;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600">Manage system users, roles, and permissions</p>
-        </div>
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={newUser.username || ""}
-                  onChange={(e) => setNewUser({...newUser, username: e.target.value})}
-                  placeholder="Enter username"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  value={newUser.fullName || ""}
-                  onChange={(e) => setNewUser({...newUser, fullName: e.target.value})}
-                  placeholder="Enter full name"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email || ""}
-                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                  placeholder="Enter email address"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={newUser.phone || ""}
-                  onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
-                  placeholder="Enter phone number"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Select onValueChange={(value) => setNewUser({...newUser, role: value as any})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Pharmacist">Pharmacist</SelectItem>
-                    <SelectItem value="Cashier">Cashier</SelectItem>
-                    <SelectItem value="Manager">Manager</SelectItem>
-                    <SelectItem value="Inventory Manager">Inventory Manager</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button onClick={handleAddUser} className="w-full">
-                Add User
-              </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-4 sm:p-6 space-y-6">
+        <FadeIn>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">User Management</h1>
+              <p className="text-gray-600 text-sm sm:text-base">Manage system users, roles, and permissions</p>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Users</p>
-                <p className="text-2xl font-bold text-gray-900">{activeUsers}</p>
-              </div>
-              <UserCheck className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Inactive Users</p>
-                <p className="text-2xl font-bold text-gray-900">{totalUsers - activeUsers}</p>
-              </div>
-              <UserX className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Admin Users</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.role === "Admin").length}
-                </p>
-              </div>
-              <Shield className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search users by name, username, email, or role..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+            
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button className="w-full lg:w-auto">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add User
+                  </Button>
+                </motion.div>
+              </DialogTrigger>
+              <DialogContent className="max-w-md mx-4 sm:mx-auto">
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={newUser.username || ""}
+                      onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                      placeholder="Enter username"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      value={newUser.fullName || ""}
+                      onChange={(e) => setNewUser({...newUser, fullName: e.target.value})}
+                      placeholder="Enter full name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={newUser.email || ""}
+                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      value={newUser.phone || ""}
+                      onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="role">Role</Label>
+                    <Select onValueChange={(value) => setNewUser({...newUser, role: value as any})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                        <SelectItem value="Pharmacist">Pharmacist</SelectItem>
+                        <SelectItem value="Cashier">Cashier</SelectItem>
+                        <SelectItem value="Manager">Manager</SelectItem>
+                        <SelectItem value="Inventory Manager">Inventory Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Button onClick={handleAddUser} className="w-full" disabled={isLoading}>
+                    {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                    Add User
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-        </CardContent>
-      </Card>
+        </FadeIn>
 
-      {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            System Users ({filteredUsers.length} users)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User ID</TableHead>
-                <TableHead>User Details</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Login</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{user.fullName}</p>
-                      <p className="text-sm text-gray-600">@{user.username}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <p className="text-sm">{user.email}</p>
-                      <p className="text-sm text-gray-600">{user.phone}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getRoleColor(user.role) as any}>
-                      {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusColor(user.status) as any}>
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm">{user.lastLogin}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        {/* Stats Cards */}
+        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card className="hover:shadow-lg transition-all duration-300">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Users</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                      <AnimatedCounter value={totalUsers} />
+                    </p>
+                  </div>
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card className="hover:shadow-lg transition-all duration-300">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active Users</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                      <AnimatedCounter value={activeUsers} />
+                    </p>
+                  </div>
+                  <UserCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card className="hover:shadow-lg transition-all duration-300">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Inactive Users</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                      <AnimatedCounter value={totalUsers - activeUsers} />
+                    </p>
+                  </div>
+                  <UserX className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card className="hover:shadow-lg transition-all duration-300">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Admin Users</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                      <AnimatedCounter value={users.filter(u => u.role === "Admin").length} />
+                    </p>
+                  </div>
+                  <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </StaggerContainer>
+
+        {/* Search */}
+        <FadeIn delay={0.2}>
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search users by name, username, email, or role..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </FadeIn>
+
+        {/* Users Table */}
+        <FadeIn delay={0.3}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg sm:text-xl">
+                <Users className="h-5 w-5 mr-2" />
+                System Users ({filteredUsers.length} users)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[120px]">User ID</TableHead>
+                      <TableHead className="min-w-[200px]">User Details</TableHead>
+                      <TableHead className="min-w-[250px]">Contact</TableHead>
+                      <TableHead className="min-w-[120px]">Role</TableHead>
+                      <TableHead className="min-w-[100px]">Status</TableHead>
+                      <TableHead className="min-w-[150px]">Last Login</TableHead>
+                      <TableHead className="min-w-[120px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user, index) => (
+                      <motion.tr
+                        key={user.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <TableCell className="font-medium">{user.id}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{user.fullName}</p>
+                            <p className="text-sm text-gray-600">@{user.username}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <p className="text-sm">{user.email}</p>
+                            <p className="text-sm text-gray-600">{user.phone}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleColor(user.role) as any}>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusColor(user.status) as any}>
+                            {user.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{user.lastLogin}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto text-red-600 hover:text-red-700">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      </div>
     </div>
   );
 };

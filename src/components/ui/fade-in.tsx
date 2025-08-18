@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import { ReactNode, useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { ReactNode } from "react";
 
 interface FadeInProps {
   children: ReactNode;
@@ -8,27 +8,15 @@ interface FadeInProps {
   className?: string;
 }
 
-export const FadeIn = ({ children, delay = 0, duration = 300, className }: FadeInProps) => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [delay]);
-
+export const FadeIn = ({ children, delay = 0, duration = 0.6, className = "" }: FadeInProps) => {
   return (
-    <div
-      className={cn(
-        "transition-all ease-out",
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
-        className
-      )}
-      style={{ transitionDuration: `${duration}ms` }}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration, delay }}
+      className={className}
     >
       {children}
-    </div>
+    </motion.div>
   );
 };
