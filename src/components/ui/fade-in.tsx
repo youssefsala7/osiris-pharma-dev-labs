@@ -1,14 +1,19 @@
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ReactNode, useEffect, useState } from "react";
 
 interface FadeInProps {
-  children: ReactNode;
+  children: React.ReactNode;
   delay?: number;
   duration?: number;
   className?: string;
 }
 
-export const FadeIn = ({ children, delay = 0, duration = 300, className }: FadeInProps) => {
+export const FadeIn = ({ 
+  children, 
+  delay = 0, 
+  duration = 500, 
+  className = "" 
+}: FadeInProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -26,7 +31,9 @@ export const FadeIn = ({ children, delay = 0, duration = 300, className }: FadeI
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         className
       )}
-      style={{ transitionDuration: `${duration}ms` }}
+      style={{
+        transitionDuration: `${duration}ms`,
+      }}
     >
       {children}
     </div>

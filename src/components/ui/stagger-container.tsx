@@ -1,20 +1,33 @@
-import { ReactNode } from "react";
-import { FadeIn } from "./fade-in";
+import { cn } from "@/lib/utils";
 
 interface StaggerContainerProps {
-  children: ReactNode[];
-  staggerDelay?: number;
+  children: React.ReactNode;
   className?: string;
+  staggerDelay?: number;
 }
 
-export const StaggerContainer = ({ children, staggerDelay = 100, className }: StaggerContainerProps) => {
+export const StaggerContainer = ({ 
+  children, 
+  className = "",
+  staggerDelay = 100 
+}: StaggerContainerProps) => {
   return (
-    <div className={className}>
-      {children.map((child, index) => (
-        <FadeIn key={index} delay={index * staggerDelay}>
-          {child}
-        </FadeIn>
-      ))}
+    <div className={cn("space-y-4", className)}>
+      {Array.isArray(children) 
+        ? children.map((child, index) => (
+            <div
+              key={index}
+              className="animate-fade-in-up"
+              style={{
+                animationDelay: `${index * staggerDelay}ms`,
+                animationFillMode: "both"
+              }}
+            >
+              {child}
+            </div>
+          ))
+        : children
+      }
     </div>
   );
 };
