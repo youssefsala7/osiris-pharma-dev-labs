@@ -11,7 +11,6 @@ export interface Prescription {
   notes: string;
   refillsRemaining: number;
   totalRefills: number;
-  pharmacistNotes?: string;
   priority: "Low" | "Medium" | "High" | "Urgent";
 }
 

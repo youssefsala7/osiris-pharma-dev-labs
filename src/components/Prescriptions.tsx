@@ -15,176 +15,81 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, FileText, User, Calendar, AlertCircle, Eye, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, FileText, User, Calendar, AlertCircle, Eye, Edit, Trash2, Download } from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
 import { StaggerContainer } from "@/components/ui/stagger-container";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { showSuccess } from "@/utils/toast";
 import { motion } from "framer-motion";
-
-interface Prescription {
-  id: string;
-  patientName: string;
-  patientId: string;
-  doctorName: string;
-  doctorLicense: string;
-  medications: PrescriptionMedication[];
-  issueDate: string;
-  expiryDate: string;
-  status: "Active" | "Filled" | "Expired" | "Cancelled";
-  notes: string;
-  refillsRemaining: number;
-  totalRefills: number;
-  priority: "Low" | "Medium" | "High" | "Urgent";
-}
-
-interface PrescriptionMedication {
-  medicineId: string;
-  medicineName: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-  quantity: number;
-  instructions: string;
-}
+import { usePrescriptions } from "./prescriptions/hooks/usePrescriptions";
 
 export const Prescriptions = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
-  const [isLoading, setIsLoading] = useState(false);
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([
-    {
-      id: "RX-001",
-      patientName: "John Doe",
-      patientId: "CUST-001",
-      doctorName: "Dr. Sarah Wilson",
-      doctorLicense: "MD-12345",
-      medications: [
-        {
-          medicineId: "MED-002",
-          medicineName: "Amoxicillin 250mg",
-          dosage: "250mg",
-          frequency: "3 times daily",
-          duration: "7 days",
-          quantity: 21,
-          instructions: "Take with food"
-        }
-      ],
-      issueDate: "2024-01-15",
-      expiryDate: "2024-07-15",
-      status: "Active",
-      notes: "Patient has mild penicillin allergy - monitor for reactions",
-      refillsRemaining: 2,
-      totalRefills: 3,
-      priority: "Medium"
-    },
-    {
-      id: "RX-002",
-      patientName: "Jane Smith",
-      patientId: "CUST-002",
-      doctorName: "Dr. Michael Brown",
-      doctorLicense: "MD-67890",
-      medications: [
-        {
-          medicineId: "MED-001",
-          medicineName: "Paracetamol 500mg",
-          dosage: "500mg",
-          frequency: "Every 6 hours as needed",
-          duration: "As needed",
-          quantity: 30,
-          instructions: "Do not exceed 4 doses in 24 hours"
-        }
-      ],
-      issueDate: "2024-01-14",
-      expiryDate: "2024-07-14",
-      status: "Filled",
-      notes: "",
-      refillsRemaining: 0,
-      totalRefills: 1,
-      priority: "Low"
-    },
-    {
-      id: "RX-003",
-      patientName: "Mike Johnson",
-      patientId: "CUST-003",
-      doctorName: "Dr. Emily Davis",
-      doctorLicense: "MD-11111",
-      medications: [
-        {
-          medicineId: "MED-003",
-          medicineName: "Ibuprofen 400mg",
-          dosage: "400mg",
-          frequency: "2 times daily",
-          duration: "14 days",
-          quantity: 28,
-          instructions: "Take with food to avoid stomach upset"
-        }
-      ],
-      issueDate: "2024-01-10",
-      expiryDate: "2024-07-10",
-      status: "Active",
-      notes: "Patient reports chronic back pain",
-      refillsRemaining: 1,
-      totalRefills: 2,
-      priority: "High"
-    },
-  ]);
+  const {
+    prescriptions,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
+    stats,
+    isLoading,
+    addPrescription,
+    updatePrescription,
+    fillPrescription,
+    cancelPrescription,
+    exportPrescriptions
+  } = usePrescriptions();
 
-  const [newPrescription, setNewPrescription] = useState<Partial<Prescription>>({
-    medications: [],
-    status: "Active",
-    refillsRemaining: 0,
-    totalRefills: 0,
-    priority: "Medium"
-  });
+  // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [viewingPrescription, setViewingPrescription] = useState<Prescription | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-  const filteredPrescriptions = prescriptions.filter(prescription => {
-    const matchesSearch = prescription.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prescription.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prescription.doctorName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || prescription.status === statusFilter;
-    const matchesPriority = priorityFilter === "all" || prescription.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
+  // Form states
+  const [newPrescriptionData, setNewPrescriptionData] = useState<any>({});
+  const [editingPrescription, setEditingPrescription] = useState<any>(null);
+  const [viewingPrescription, setViewingPrescription] = useState<any>(null);
 
   const handleAddPrescription = async () => {
-    if (newPrescription.patientName && newPrescription.doctorName) {
-      setIsLoading(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const prescription: Prescription = {
-        id: `RX-${String(prescriptions.length + 1).padStart(3, '0')}`,
-        patientName: newPrescription.patientName,
-        patientId: newPrescription.patientId || `CUST-${String(prescriptions.length + 1).padStart(3, '0')}`,
-        doctorName: newPrescription.doctorName,
-        doctorLicense: newPrescription.doctorLicense || "",
-        medications: newPrescription.medications || [],
-        issueDate: new Date().toISOString().split('T')[0],
-        expiryDate: newPrescription.expiryDate || "",
-        status: "Active",
-        notes: newPrescription.notes || "",
-        refillsRemaining: Number(newPrescription.refillsRemaining) || 0,
-        totalRefills: Number(newPrescription.totalRefills) || 0,
-        priority: newPrescription.priority || "Medium"
-      };
-      
-      setPrescriptions([prescription, ...prescriptions]);
-      setNewPrescription({ medications: [], status: "Active", refillsRemaining: 0, totalRefills: 0, priority: "Medium" });
+    const success = await addPrescription(newPrescriptionData);
+    if (success) {
+      setNewPrescriptionData({});
       setIsAddDialogOpen(false);
-      setIsLoading(false);
-      showSuccess("Prescription added successfully!");
     }
   };
 
-  const handleViewPrescription = (prescription: Prescription) => {
+  const handleEditPrescription = async () => {
+    if (editingPrescription) {
+      const success = await updatePrescription(editingPrescription);
+      if (success) {
+        setEditingPrescription(null);
+        setIsEditDialogOpen(false);
+      }
+    }
+  };
+
+  const handleViewPrescription = (prescription: any) => {
     setViewingPrescription(prescription);
     setIsViewDialogOpen(true);
+  };
+
+  const handleEditClick = (prescription: any) => {
+    setEditingPrescription(prescription);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleFillPrescription = (prescriptionId: string) => {
+    fillPrescription(prescriptionId);
+  };
+
+  const handleCancelPrescription = (prescriptionId: string) => {
+    cancelPrescription(prescriptionId);
+  };
+
+  const handleExportData = () => {
+    exportPrescriptions();
   };
 
   const getStatusColor = (status: string) => {
@@ -207,14 +112,6 @@ export const Prescriptions = () => {
     }
   };
 
-  const activePrescriptions = prescriptions.filter(p => p.status === "Active").length;
-  const expiringSoon = prescriptions.filter(p => {
-    const expiryDate = new Date(p.expiryDate);
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return expiryDate <= thirtyDaysFromNow && p.status === "Active";
-  }).length;
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-4 sm:p-6 space-y-6">
@@ -225,118 +122,125 @@ export const Prescriptions = () => {
               <p className="text-gray-600 text-sm sm:text-base">Manage patient prescriptions and medication orders</p>
             </div>
             
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button className="w-full lg:w-auto">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Prescription
-                  </Button>
-                </motion.div>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Add New Prescription</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={handleExportData} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+                {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                Export
+              </Button>
+              
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button className="w-full sm:w-auto">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Prescription
+                    </Button>
+                  </motion.div>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Add New Prescription</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="patientName">Patient Name *</Label>
+                        <Input
+                          id="patientName"
+                          value={newPrescriptionData.patientName || ""}
+                          onChange={(e) => setNewPrescriptionData({...newPrescriptionData, patientName: e.target.value})}
+                          placeholder="Enter patient name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="patientId">Patient ID</Label>
+                        <Input
+                          id="patientId"
+                          value={newPrescriptionData.patientId || ""}
+                          onChange={(e) => setNewPrescriptionData({...newPrescriptionData, patientId: e.target.value})}
+                          placeholder="Enter patient ID"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="doctorName">Doctor Name *</Label>
+                        <Input
+                          id="doctorName"
+                          value={newPrescriptionData.doctorName || ""}
+                          onChange={(e) => setNewPrescriptionData({...newPrescriptionData, doctorName: e.target.value})}
+                          placeholder="Enter doctor name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="doctorLicense">Doctor License</Label>
+                        <Input
+                          id="doctorLicense"
+                          value={newPrescriptionData.doctorLicense || ""}
+                          onChange={(e) => setNewPrescriptionData({...newPrescriptionData, doctorLicense: e.target.value})}
+                          placeholder="Enter license number"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="expiryDate">Expiry Date</Label>
+                        <Input
+                          id="expiryDate"
+                          type="date"
+                          value={newPrescriptionData.expiryDate || ""}
+                          onChange={(e) => setNewPrescriptionData({...newPrescriptionData, expiryDate: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="priority">Priority</Label>
+                        <Select onValueChange={(value) => setNewPrescriptionData({...newPrescriptionData, priority: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Low">Low</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="High">High</SelectItem>
+                            <SelectItem value="Urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="totalRefills">Total Refills</Label>
+                        <Input
+                          id="totalRefills"
+                          type="number"
+                          value={newPrescriptionData.totalRefills || ""}
+                          onChange={(e) => setNewPrescriptionData({...newPrescriptionData, totalRefills: Number(e.target.value), refillsRemaining: Number(e.target.value)})}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    
                     <div>
-                      <Label htmlFor="patientName">Patient Name</Label>
-                      <Input
-                        id="patientName"
-                        value={newPrescription.patientName || ""}
-                        onChange={(e) => setNewPrescription({...newPrescription, patientName: e.target.value})}
-                        placeholder="Enter patient name"
+                      <Label htmlFor="notes">Notes</Label>
+                      <Textarea
+                        id="notes"
+                        value={newPrescriptionData.notes || ""}
+                        onChange={(e) => setNewPrescriptionData({...newPrescriptionData, notes: e.target.value})}
+                        placeholder="Enter any special notes or instructions"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="patientId">Patient ID</Label>
-                      <Input
-                        id="patientId"
-                        value={newPrescription.patientId || ""}
-                        onChange={(e) => setNewPrescription({...newPrescription, patientId: e.target.value})}
-                        placeholder="Enter patient ID"
-                      />
-                    </div>
+                    
+                    <Button onClick={handleAddPrescription} className="w-full" disabled={isLoading}>
+                      {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                      Add Prescription
+                    </Button>
                   </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="doctorName">Doctor Name</Label>
-                      <Input
-                        id="doctorName"
-                        value={newPrescription.doctorName || ""}
-                        onChange={(e) => setNewPrescription({...newPrescription, doctorName: e.target.value})}
-                        placeholder="Enter doctor name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="doctorLicense">Doctor License</Label>
-                      <Input
-                        id="doctorLicense"
-                        value={newPrescription.doctorLicense || ""}
-                        onChange={(e) => setNewPrescription({...newPrescription, doctorLicense: e.target.value})}
-                        placeholder="Enter license number"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="expiryDate">Expiry Date</Label>
-                      <Input
-                        id="expiryDate"
-                        type="date"
-                        value={newPrescription.expiryDate || ""}
-                        onChange={(e) => setNewPrescription({...newPrescription, expiryDate: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="priority">Priority</Label>
-                      <Select onValueChange={(value) => setNewPrescription({...newPrescription, priority: value as any})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Low">Low</SelectItem>
-                          <SelectItem value="Medium">Medium</SelectItem>
-                          <SelectItem value="High">High</SelectItem>
-                          <SelectItem value="Urgent">Urgent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="totalRefills">Total Refills</Label>
-                      <Input
-                        id="totalRefills"
-                        type="number"
-                        value={newPrescription.totalRefills || ""}
-                        onChange={(e) => setNewPrescription({...newPrescription, totalRefills: Number(e.target.value), refillsRemaining: Number(e.target.value)})}
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="notes">Notes</Label>
-                    <Textarea
-                      id="notes"
-                      value={newPrescription.notes || ""}
-                      onChange={(e) => setNewPrescription({...newPrescription, notes: e.target.value})}
-                      placeholder="Enter any special notes or instructions"
-                    />
-                  </div>
-                  
-                  <Button onClick={handleAddPrescription} className="w-full" disabled={isLoading}>
-                    {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                    Add Prescription
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </FadeIn>
 
@@ -349,7 +253,7 @@ export const Prescriptions = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Prescriptions</p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                      <AnimatedCounter value={prescriptions.length} />
+                      <AnimatedCounter value={stats.totalPrescriptions} />
                     </p>
                   </div>
                   <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
@@ -365,7 +269,7 @@ export const Prescriptions = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Active Prescriptions</p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                      <AnimatedCounter value={activePrescriptions} />
+                      <AnimatedCounter value={stats.activePrescriptions} />
                     </p>
                   </div>
                   <Badge variant="default" className="text-lg px-3 py-1">Active</Badge>
@@ -381,7 +285,7 @@ export const Prescriptions = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Expiring Soon</p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                      <AnimatedCounter value={expiringSoon} />
+                      <AnimatedCounter value={stats.expiringSoon} />
                     </p>
                   </div>
                   <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
@@ -397,7 +301,7 @@ export const Prescriptions = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Filled Today</p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                      <AnimatedCounter value={prescriptions.filter(p => p.status === "Filled").length} />
+                      <AnimatedCounter value={stats.filledToday} />
                     </p>
                   </div>
                   <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
@@ -460,7 +364,7 @@ export const Prescriptions = () => {
             <CardHeader>
               <CardTitle className="flex items-center text-lg sm:text-xl">
                 <FileText className="h-5 w-5 mr-2" />
-                Prescription Database ({filteredPrescriptions.length} prescriptions)
+                Prescription Database ({prescriptions.length} prescriptions)
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -477,11 +381,11 @@ export const Prescriptions = () => {
                       <TableHead className="min-w-[80px]">Refills</TableHead>
                       <TableHead className="min-w-[80px]">Priority</TableHead>
                       <TableHead className="min-w-[80px]">Status</TableHead>
-                      <TableHead className="min-w-[120px]">Actions</TableHead>
+                      <TableHead className="min-w-[150px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPrescriptions.map((prescription, index) => (
+                    {prescriptions.map((prescription, index) => (
                       <motion.tr
                         key={prescription.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -504,7 +408,7 @@ export const Prescriptions = () => {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            {prescription.medications.slice(0, 2).map((med, idx) => (
+                            {prescription.medications.slice(0, 2).map((med: any, idx: number) => (
                               <div key={idx} className="text-sm">
                                 <p className="font-medium">{med.medicineName}</p>
                                 <p className="text-gray-600">{med.dosage} - {med.frequency}</p>
@@ -545,13 +449,25 @@ export const Prescriptions = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
+                              onClick={() => handleEditClick(prescription)}
                               className="w-full sm:w-auto"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            {prescription.status === "Active" && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleFillPrescription(prescription.id)}
+                                className="w-full sm:w-auto text-green-600 hover:text-green-700"
+                              >
+                                Fill
+                              </Button>
+                            )}
                             <Button 
                               variant="outline" 
                               size="sm"
+                              onClick={() => handleCancelPrescription(prescription.id)}
                               className="w-full sm:w-auto text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -606,7 +522,7 @@ export const Prescriptions = () => {
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Medications</Label>
                   <div className="mt-2 space-y-3">
-                    {viewingPrescription.medications.map((med, index) => (
+                    {viewingPrescription.medications.map((med: any, index: number) => (
                       <div key={index} className="p-3 bg-gray-50 rounded-lg">
                         <p className="font-medium">{med.medicineName}</p>
                         <p className="text-sm text-gray-600">Dosage: {med.dosage}</p>
@@ -625,6 +541,54 @@ export const Prescriptions = () => {
                     <p className="text-sm bg-gray-50 p-3 rounded-lg">{viewingPrescription.notes}</p>
                   </div>
                 )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Prescription Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Prescription</DialogTitle>
+            </DialogHeader>
+            {editingPrescription && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="editPatientName">Patient Name</Label>
+                    <Input
+                      id="editPatientName"
+                      value={editingPrescription.patientName || ""}
+                      onChange={(e) => setEditingPrescription({...editingPrescription, patientName: e.target.value})}
+                      placeholder="Enter patient name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="editDoctorName">Doctor Name</Label>
+                    <Input
+                      id="editDoctorName"
+                      value={editingPrescription.doctorName || ""}
+                      onChange={(e) => setEditingPrescription({...editingPrescription, doctorName: e.target.value})}
+                      placeholder="Enter doctor name"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="editNotes">Notes</Label>
+                  <Textarea
+                    id="editNotes"
+                    value={editingPrescription.notes || ""}
+                    onChange={(e) => setEditingPrescription({...editingPrescription, notes: e.target.value})}
+                    placeholder="Enter any special notes or instructions"
+                  />
+                </div>
+                
+                <Button onClick={handleEditPrescription} className="w-full" disabled={isLoading}>
+                  {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
+                  Update Prescription
+                </Button>
               </div>
             )}
           </DialogContent>

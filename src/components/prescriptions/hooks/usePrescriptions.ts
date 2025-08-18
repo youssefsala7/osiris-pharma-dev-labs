@@ -123,8 +123,8 @@ export const usePrescriptions = () => {
   }, [prescriptions]);
 
   const addPrescription = async (prescriptionData: PrescriptionFormData) => {
-    if (!prescriptionData.patientName || !prescriptionData.doctorName || !prescriptionData.medications || prescriptionData.medications.length === 0) {
-      showError("Please fill in all required fields and add at least one medication");
+    if (!prescriptionData.patientName || !prescriptionData.doctorName) {
+      showError("Please fill in all required fields");
       return false;
     }
 
@@ -139,7 +139,7 @@ export const usePrescriptions = () => {
         patientId: prescriptionData.patientId || `CUST-${String(prescriptions.length + 1).padStart(3, '0')}`,
         doctorName: prescriptionData.doctorName,
         doctorLicense: prescriptionData.doctorLicense || "",
-        medications: prescriptionData.medications,
+        medications: prescriptionData.medications || [],
         issueDate: new Date().toISOString().split('T')[0],
         expiryDate: prescriptionData.expiryDate || "",
         status: "Active",
