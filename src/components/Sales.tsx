@@ -1,18 +1,20 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Search, Plus, Download } from "lucide-react";
-import { FadeIn } from "@/components/ui/fade-in";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageContainer } from "@/components/ui/page-container";
+import { ResponsiveGrid } from "@/components/ui/responsive-grid";
+import { StatCard } from "@/components/ui/stat-card";
+import { StandardCard } from "@/components/ui/standard-card";
 import { SalesStats } from "./sales/SalesStats";
 import { SalesTable } from "./sales/SalesTable";
 import { QuickSaleForm } from "./sales/QuickSaleForm";
 import { SaleDetails } from "./sales/SaleDetails";
 import { useSales } from "./sales/hooks/useSales";
 import { Sale, QuickSaleData } from "./sales/types";
+import { ShoppingCart, TrendingUp, DollarSign, Calendar } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 
 export const Sales = () => {
@@ -67,7 +69,6 @@ export const Sales = () => {
   };
 
   const handlePrintReceipt = (sale: Sale) => {
-    // Simulate receipt printing
     showSuccess(`Receipt printed for sale ${sale.id}`);
   };
 
@@ -75,111 +76,126 @@ export const Sales = () => {
     exportSales();
   };
 
+  const headerActions = (
+    <>
+      <Button onClick={handleExportData} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+        <Download className="h-4 w-4 mr-2" />
+        Export
+      </Button>
+      <Button onClick={() => setIsQuickSaleOpen(true)} className="w-full sm:w-auto">
+        <Plus className="h-4 w-4 mr-2" />
+        Quick Sale
+      </Button>
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 space-y-6">
-        <FadeIn>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Sales Management</h1>
-              <p className="text-gray-600 text-sm sm:text-base">Track and manage your pharmacy sales</p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button onClick={handleExportData} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
-                {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Download className="h-4 w-4 mr-2" />}
-                Export
-              </Button>
-              
-              <Dialog open={isQuickSaleOpen} onOpenChange={setIsQuickSaleOpen}>
-                <DialogTrigger asChild>
-                  <Button className="w-full sm:w-auto">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Quick Sale
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md mx-4 sm:mx-auto">
-                  <DialogHeader>
-                    <DialogTitle>Quick Sale</DialogTitle>
-                  </DialogHeader>
-                  <QuickSaleForm
-                    formData={quickSaleData}
-                    onFormDataChange={setQuickSaleData}
-                    onSubmit={handleQuickSale}
-                    isLoading={isLoading}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </FadeIn>
-
-        <SalesStats stats={stats} />
-
-        {/* Search and Filters */}
-        <FadeIn delay={200}>
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search sales by ID, customer, or cashier..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Refunded">Refunded</SelectItem>
-                      <SelectItem value="Cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Filter by date" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">This Week</SelectItem>
-                      <SelectItem value="month">This Month</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </FadeIn>
-
-        <SalesTable
-          sales={sales}
-          onView={handleViewSale}
-          onRefund={handleRefundSale}
-          onPrintReceipt={handlePrintReceipt}
-          isLoading={isLoading}
+    <PageContainer
+      title="Sales Management"
+      subtitle="Track and manage your pharmacy sales"
+      headerActions={headerActions}
+    >
+      {/* Stats Cards */}
+      <ResponsiveGrid cols={4}>
+        <StatCard
+          title="Today's Sales"
+          value={stats.todaysSales}
+          icon={<ShoppingCart className="h-8 w-8 text-blue-600" />}
+          suffix=" sales"
         />
+        <StatCard
+          title="Total Sales"
+          value={stats.totalSales}
+          icon={<TrendingUp className="h-8 w-8 text-green-600" />}
+          suffix=" transactions"
+        />
+        <StatCard
+          title="Total Revenue"
+          value={stats.totalRevenue}
+          icon={<DollarSign className="h-8 w-8 text-purple-600" />}
+          prefix="$"
+        />
+        <StatCard
+          title="Average Sale"
+          value={stats.averageSale}
+          icon={<Calendar className="h-8 w-8 text-orange-600" />}
+          prefix="$"
+        />
+      </ResponsiveGrid>
 
-        {/* View Sale Dialog */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Sale Details</DialogTitle>
-            </DialogHeader>
-            {viewingSale && <SaleDetails sale={viewingSale} />}
-          </DialogContent>
-        </Dialog>
-      </div>
-    </div>
+      {/* Search and Filters */}
+      <StandardCard>
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search sales by ID, customer, or cashier..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Refunded">Refunded</SelectItem>
+                <SelectItem value="Cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={dateFilter} onValueChange={setDateFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filter by date" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </StandardCard>
+
+      <SalesTable
+        sales={sales}
+        onView={handleViewSale}
+        onRefund={handleRefundSale}
+        onPrintReceipt={handlePrintReceipt}
+        isLoading={isLoading}
+      />
+
+      {/* Dialogs */}
+      <Dialog open={isQuickSaleOpen} onOpenChange={setIsQuickSaleOpen}>
+        <DialogContent className="max-w-md mx-4 sm:mx-auto">
+          <DialogHeader>
+            <DialogTitle>Quick Sale</DialogTitle>
+          </DialogHeader>
+          <QuickSaleForm
+            formData={quickSaleData}
+            onFormDataChange={setQuickSaleData}
+            onSubmit={handleQuickSale}
+            isLoading={isLoading}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Sale Details</DialogTitle>
+          </DialogHeader>
+          {viewingSale && <SaleDetails sale={viewingSale} />}
+        </DialogContent>
+      </Dialog>
+    </PageContainer>
   );
 };
