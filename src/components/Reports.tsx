@@ -1,262 +1,268 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  BarChart3,
-  TrendingUp,
-  DollarSign,
-  Package,
-  Users,
-  Calendar,
-  Download,
-  FileText,
-} from "lucide-react";
 import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { BarChart3, Download, Plus, TrendingUp } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ReportCard } from "./reports/ReportCard";
+import { ReportGenerator } from "./reports/ReportGenerator";
+import { SalesChart } from "./reports/SalesChart";
+import { useReports } from "./reports/hooks/useReports";
 
 export const Reports = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState("monthly");
+  const {
+    reports,
+    filters,
+    setFilters,
+    isLoading,
+    generateReport,
+    downloadReport,
+    deleteReport,
+    getSalesReport
+  } = useReports();
 
-  const salesData = {
-    daily: { revenue: 2847, transactions: 45, avgSale: 63.27 },
-    weekly: { revenue: 18420, transactions: 287, avgSale: 64.15 },
-    monthly: { revenue: 78650, transactions: 1234, avgSale: 63.75 },
-    yearly: { revenue: 945800, transactions: 14808, avgSale: 63.85 }
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+
+  const handleGenerateReport = async (reportType: string, dateRange: string) => {
+    const success = await generateReport(reportType, dateRange);
+    if (success) {
+      setIsGeneratorOpen(false);
+    }
+    return success;
   };
 
-  const topSellingMedicines = [
-    { name: "Paracetamol 500mg", sales: 245, revenue: 612.50 },
-    { name: "Amoxicillin 250mg", sales: 156, revenue: 1365.00 },
-    { name: "Ibuprofen 400mg", sales: 134, revenue: 435.50 },
-    { name: "Aspirin 75mg", sales: 98, revenue: 294.00 },
-    { name: "Vitamin D3", sales: 87, revenue: 521.00 },
-  ];
-
-  const lowStockItems = [
-    { name: "Paracetamol 500mg", current: 15, minimum: 50, status: "Critical" },
-    { name: "Amoxicillin 250mg", current: 8, minimum: 30, status: "Critical" },
-    { name: "Ibuprofen 400mg", current: 22, minimum: 40, status: "Low" },
-    { name: "Aspirin 75mg", current: 12, minimum: 25, status: "Critical" },
-  ];
-
-  const customerInsights = {
-    totalCustomers: 856,
-    activeCustomers: 734,
-    newCustomers: 45,
-    returningCustomers: 689,
-    averageSpend: 89.45
+  const exportAllReports = async () => {
+    // Simulate export functionality
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const csvContent = [
+      ["Report ID", "Title", "Type", "Status", "Generated At", "File Size"].join(","),
+      ...reports.map(report => [
+        report.id, report.title, report.type, report.status, 
+        report.generatedAt, report.fileSize || "N/A"
+      ].join(","))
+    ].join("\n");
+    
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "reports-summary.csv";
+    a.click();
   };
-
-  const currentData = salesData[selectedPeriod as keyof typeof salesData];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-600">Comprehensive insights into your pharmacy operations</p>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="yearly">Yearly</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-4 sm:p-6 space-y-6">
+        <FadeIn>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Reports & Analytics</h1>
+              <p className="text-gray-600 text-sm sm:text-base">Generate and manage your pharmacy reports</p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={exportAllReports} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+                {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                Export All
+              </Button>
+              
+              <Dialog open={isAnalyticsOpen} onOpenChange={setIsAnalyticsOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Analytics
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-6xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Sales Analytics</DialogTitle>
+                  </DialogHeader>
+                  <SalesChart data={getSalesReport()} />
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={isGeneratorOpen} onOpenChange={setIsGeneratorOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Generate Report
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md mx-4 sm:mx-auto">
+                  <DialogHeader>
+                    <DialogTitle>Generate New Report</DialogTitle>
+                  </DialogHeader>
+                  <ReportGenerator
+                    onGenerate={handleGenerateReport}
+                    isLoading={isLoading}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </FadeIn>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Revenue ({selectedPeriod})</p>
-                <p className="text-2xl font-bold text-gray-900">${currentData.revenue.toLocaleString()}</p>
-                <Badge variant="secondary" className="mt-1">
-                  <TrendingUp size={12} className="mr-1" />
-                  +12.5%
-                </Badge>
-              </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">{currentData.transactions.toLocaleString()}</p>
-                <Badge variant="secondary" className="mt-1">
-                  <TrendingUp size={12} className="mr-1" />
-                  +8.3%
-                </Badge>
-              </div>
-              <BarChart3 className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Average Sale</p>
-                <p className="text-2xl font-bold text-gray-900">${currentData.avgSale.toFixed(2)}</p>
-                <Badge variant="secondary" className="mt-1">
-                  <TrendingUp size={12} className="mr-1" />
-                  +3.7%
-                </Badge>
-              </div>
-              <FileText className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Customers</p>
-                <p className="text-2xl font-bold text-gray-900">{customerInsights.activeCustomers}</p>
-                <Badge variant="secondary" className="mt-1">
-                  <TrendingUp size={12} className="mr-1" />
-                  +5.2%
-                </Badge>
-              </div>
-              <Users className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Selling Medicines */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Package className="h-5 w-5 mr-2" />
-              Top Selling Medicines
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topSellingMedicines.map((medicine, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-sm font-bold text-blue-600">{index + 1}</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{medicine.name}</p>
-                      <p className="text-sm text-gray-600">{medicine.sales} units sold</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-gray-900">${medicine.revenue.toFixed(2)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Low Stock Alert */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Package className="h-5 w-5 mr-2 text-red-500" />
-              Inventory Alerts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {lowStockItems.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+        {/* Quick Stats */}
+        <FadeIn delay={100}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-gray-900">{item.name}</p>
-                    <p className="text-sm text-gray-600">Current: {item.current} | Min: {item.minimum}</p>
+                    <p className="text-sm font-medium text-gray-600">Total Reports</p>
+                    <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
                   </div>
-                  <Badge variant={item.status === "Critical" ? "destructive" : "secondary"}>
-                    {item.status}
-                  </Badge>
+                  <BarChart3 className="h-8 w-8 text-blue-600" />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Generated Today</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {reports.filter(r => {
+                        const today = new Date().toDateString();
+                        const reportDate = new Date(r.generatedAt).toDateString();
+                        return today === reportDate;
+                      }).length}
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Processing</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {reports.filter(r => r.status === "Processing").length}
+                    </p>
+                  </div>
+                  <LoadingSpinner size="lg" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Size</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {reports.reduce((total, report) => {
+                        if (report.fileSize) {
+                          const size = parseFloat(report.fileSize.replace(' MB', ''));
+                          return total + size;
+                        }
+                        return total;
+                      }, 0).toFixed(1)} MB
+                    </p>
+                  </div>
+                  <Download className="h-8 w-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </FadeIn>
+
+        {/* Filters */}
+        <FadeIn delay={200}>
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Select 
+                  value={filters.reportType} 
+                  onValueChange={(value) => setFilters({...filters, reportType: value as any})}
+                >
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="sales">Sales</SelectItem>
+                    <SelectItem value="inventory">Inventory</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="financial">Financial</SelectItem>
+                    <SelectItem value="prescription">Prescription</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select 
+                  value={filters.status} 
+                  onValueChange={(value) => setFilters({...filters, status: value as any})}
+                >
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="Generated">Generated</SelectItem>
+                    <SelectItem value="Processing">Processing</SelectItem>
+                    <SelectItem value="Failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select 
+                  value={filters.dateRange} 
+                  onValueChange={(value) => setFilters({...filters, dateRange: value as any})}
+                >
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filter by date" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="quarter">This Quarter</SelectItem>
+                    <SelectItem value="year">This Year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </FadeIn>
+
+        {/* Reports Grid */}
+        <FadeIn delay={300}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {reports.map((report) => (
+              <ReportCard
+                key={report.id}
+                report={report}
+                onDownload={downloadReport}
+                onDelete={deleteReport}
+                isLoading={isLoading}
+              />
+            ))}
+          </div>
+        </FadeIn>
+
+        {reports.length === 0 && (
+          <FadeIn delay={400}>
+            <Card>
+              <CardContent className="p-8 text-center">
+                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No reports found</h3>
+                <p className="text-gray-600 mb-4">Generate your first report to get started with analytics.</p>
+                <Button onClick={() => setIsGeneratorOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
+              </CardContent>
+            </Card>
+          </FadeIn>
+        )}
       </div>
-
-      {/* Customer Analytics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            Customer Analytics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{customerInsights.totalCustomers}</p>
-              <p className="text-sm text-gray-600">Total Customers</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{customerInsights.activeCustomers}</p>
-              <p className="text-sm text-gray-600">Active Customers</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{customerInsights.newCustomers}</p>
-              <p className="text-sm text-gray-600">New This Month</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{customerInsights.returningCustomers}</p>
-              <p className="text-sm text-gray-600">Returning Customers</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">${customerInsights.averageSpend}</p>
-              <p className="text-sm text-gray-600">Average Spend</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Report Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-              <Calendar className="h-6 w-6 mb-2" />
-              <span>Monthly Sales Report</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-              <Package className="h-6 w-6 mb-2" />
-              <span>Inventory Report</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-              <Users className="h-6 w-6 mb-2" />
-              <span>Customer Report</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
