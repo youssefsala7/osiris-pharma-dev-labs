@@ -20,6 +20,7 @@ import { PrescriptionDialog } from "./dashboard/PrescriptionDialog";
 import { useDashboard } from "./dashboard/hooks/useDashboard";
 import { FadeIn } from "@/components/ui/fade-in";
 import { QuickAction } from "./dashboard/types";
+import { motion } from "framer-motion";
 
 export const Dashboard = () => {
   const {
@@ -143,21 +144,25 @@ export const Dashboard = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-2">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setIsQuickSaleOpen(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Quick Sale
-              </button>
+              </motion.button>
               
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setIsNewPrescriptionOpen(true)}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center"
               >
                 <FileText className="h-4 w-4 mr-2" />
                 New Prescription
-              </button>
+              </motion.button>
             </div>
           </div>
         </FadeIn>

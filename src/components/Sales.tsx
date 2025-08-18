@@ -14,6 +14,7 @@ import { SaleDetails } from "./sales/SaleDetails";
 import { useSales } from "./sales/hooks/useSales";
 import { Sale, QuickSaleData } from "./sales/types";
 import { showSuccess } from "@/utils/toast";
+import { motion } from "framer-motion";
 
 export const Sales = () => {
   const {
@@ -93,10 +94,12 @@ export const Sales = () => {
               
               <Dialog open={isQuickSaleOpen} onOpenChange={setIsQuickSaleOpen}>
                 <DialogTrigger asChild>
-                  <Button className="w-full sm:w-auto">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Quick Sale
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button className="w-full sm:w-auto">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Quick Sale
+                    </Button>
+                  </motion.div>
                 </DialogTrigger>
                 <DialogContent className="max-w-md mx-4 sm:mx-auto">
                   <DialogHeader>

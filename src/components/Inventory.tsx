@@ -8,6 +8,8 @@ import { MedicineForm } from "./inventory/MedicineForm";
 import { MedicineDetails } from "./inventory/MedicineDetails";
 import { useInventory } from "./inventory/hooks/useInventory";
 import { Medicine, MedicineFormData } from "./inventory/types";
+import { motion } from "framer-motion";
+import { FadeIn } from "./ui/fade-in";
 
 export const Inventory = () => {
   const {
@@ -74,11 +76,13 @@ export const Inventory = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-4 sm:p-6 space-y-6">
-        <InventoryHeader
-          onExport={handleExportData}
-          onAddMedicine={() => setIsAddDialogOpen(true)}
-          isLoading={isLoading}
-        />
+        <FadeIn>
+          <InventoryHeader
+            onExport={handleExportData}
+            onAddMedicine={() => setIsAddDialogOpen(true)}
+            isLoading={isLoading}
+          />
+        </FadeIn>
 
         <InventoryStats stats={stats} />
 
