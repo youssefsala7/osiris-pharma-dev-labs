@@ -12,11 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Search, AlertTriangle, Calendar, Package, Trash2 } from "lucide-react";
-import { FadeIn } from "@/components/ui/fade-in";
-import { StaggerContainer } from "@/components/ui/stagger-container";
-import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { showSuccess } from "@/utils/toast";
-import { motion } from "framer-motion";
 
 interface ExpiredMedicine {
   id: string;
@@ -119,180 +115,147 @@ export const ExpiredMedicines = () => {
   const disposed = expiredMedicines.filter(m => m.status === "Disposed").length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 space-y-6">
-        <FadeIn>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Expired Medicines</h1>
-            <p className="text-gray-600 text-sm sm:text-base">Track and manage expired and expiring medicines</p>
-          </div>
-        </FadeIn>
-
-        {/* Stats Cards */}
-        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-            <Card className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Expired Items</p>
-                    <p className="text-xl sm:text-2xl font-bold text-red-600">
-                      <AnimatedCounter value={totalExpired} />
-                    </p>
-                  </div>
-                  <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-            <Card className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Expiring Soon</p>
-                    <p className="text-xl sm:text-2xl font-bold text-orange-600">
-                      <AnimatedCounter value={expiringSoon} />
-                    </p>
-                  </div>
-                  <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-            <Card className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Loss</p>
-                    <p className="text-xl sm:text-2xl font-bold text-red-600">
-                      $<AnimatedCounter value={totalLoss} />
-                    </p>
-                  </div>
-                  <div className="text-red-600 text-2xl font-bold">$</div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-            <Card className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Disposed</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-600">
-                      <AnimatedCounter value={disposed} />
-                    </p>
-                  </div>
-                  <Package className="h-6 w-6 sm:h-8 sm:w-8 text-gray-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </StaggerContainer>
-
-        {/* Search */}
-        <FadeIn delay={0.2}>
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search by medicine name, batch number, or category..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </FadeIn>
-
-        {/* Expired Medicines Table */}
-        <FadeIn delay={0.3}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg sm:text-xl">
-                <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
-                Expired & Expiring Medicines ({filteredMedicines.length} items)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[200px]">Medicine</TableHead>
-                      <TableHead className="min-w-[150px]">Batch Number</TableHead>
-                      <TableHead className="min-w-[120px]">Expiry Date</TableHead>
-                      <TableHead className="min-w-[80px]">Quantity</TableHead>
-                      <TableHead className="min-w-[100px]">Unit Price</TableHead>
-                      <TableHead className="min-w-[120px]">Total Loss</TableHead>
-                      <TableHead className="min-w-[120px]">Days Expired</TableHead>
-                      <TableHead className="min-w-[100px]">Status</TableHead>
-                      <TableHead className="min-w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredMedicines.map((medicine, index) => (
-                      <motion.tr
-                        key={medicine.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{medicine.name}</p>
-                            <p className="text-sm text-gray-600">{medicine.category}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{medicine.batchNumber}</TableCell>
-                        <TableCell>{medicine.expiryDate}</TableCell>
-                        <TableCell>{medicine.quantity}</TableCell>
-                        <TableCell>${medicine.originalPrice.toFixed(2)}</TableCell>
-                        <TableCell className="font-medium text-red-600">
-                          ${medicine.totalLoss.toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          {medicine.daysExpired > 0 ? (
-                            <span className="text-red-600">+{medicine.daysExpired} days</span>
-                          ) : (
-                            <span className="text-orange-600">{Math.abs(medicine.daysExpired)} days left</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusColor(medicine.status) as any}>
-                            {medicine.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {medicine.status !== "Disposed" && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDispose(medicine.id)}
-                              className="w-full sm:w-auto"
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Dispose
-                            </Button>
-                          )}
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </FadeIn>
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Expired Medicines</h1>
+        <p className="text-gray-600">Track and manage expired and expiring medicines</p>
       </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Expired Items</p>
+                <p className="text-2xl font-bold text-red-600">{totalExpired}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Expiring Soon</p>
+                <p className="text-2xl font-bold text-orange-600">{expiringSoon}</p>
+              </div>
+              <Calendar className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Loss</p>
+                <p className="text-2xl font-bold text-red-600">${totalLoss.toFixed(2)}</p>
+              </div>
+              <div className="text-red-600 text-2xl font-bold">$</div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Disposed</p>
+                <p className="text-2xl font-bold text-gray-600">{disposed}</p>
+              </div>
+              <Package className="h-8 w-8 text-gray-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search by medicine name, batch number, or category..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Expired Medicines Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
+            Expired & Expiring Medicines ({filteredMedicines.length} items)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Medicine</TableHead>
+                <TableHead>Batch Number</TableHead>
+                <TableHead>Expiry Date</TableHead>
+                <TableHead>Quantity</TableHead>
+                <TableHead>Unit Price</TableHead>
+                <TableHead>Total Loss</TableHead>
+                <TableHead>Days Expired</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredMedicines.map((medicine) => (
+                <TableRow key={medicine.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{medicine.name}</p>
+                      <p className="text-sm text-gray-600">{medicine.category}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">{medicine.batchNumber}</TableCell>
+                  <TableCell>{medicine.expiryDate}</TableCell>
+                  <TableCell>{medicine.quantity}</TableCell>
+                  <TableCell>${medicine.originalPrice.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium text-red-600">
+                    ${medicine.totalLoss.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    {medicine.daysExpired > 0 ? (
+                      <span className="text-red-600">+{medicine.daysExpired} days</span>
+                    ) : (
+                      <span className="text-orange-600">{Math.abs(medicine.daysExpired)} days left</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusColor(medicine.status) as any}>
+                      {medicine.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {medicine.status !== "Disposed" && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDispose(medicine.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Dispose
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

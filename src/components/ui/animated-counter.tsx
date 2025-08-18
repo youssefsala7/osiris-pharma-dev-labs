@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
-import { motion, useAnimation } from "framer-motion";
 
 interface AnimatedCounterProps {
   value: number;
   duration?: number;
   prefix?: string;
   suffix?: string;
+  className?: string;
 }
 
-export const AnimatedCounter = ({ value, duration = 1000, prefix = "", suffix = "" }: AnimatedCounterProps) => {
+export const AnimatedCounter = ({ 
+  value, 
+  duration = 1000, 
+  prefix = "", 
+  suffix = "",
+  className = ""
+}: AnimatedCounterProps) => {
   const [count, setCount] = useState(0);
-  const controls = useAnimation();
 
   useEffect(() => {
     let startTime: number;
@@ -37,12 +42,8 @@ export const AnimatedCounter = ({ value, duration = 1000, prefix = "", suffix = 
   }, [value, duration]);
 
   return (
-    <motion.span
-      initial={{ scale: 0.8 }}
-      animate={{ scale: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <span className={className}>
       {prefix}{count.toLocaleString()}{suffix}
-    </motion.span>
+    </span>
   );
 };

@@ -13,7 +13,6 @@ import { CustomerForm } from "./customers/CustomerForm";
 import { CustomerDetails } from "./customers/CustomerDetails";
 import { useCustomers } from "./customers/hooks/useCustomers";
 import { Customer, CustomerFormData } from "./customers/types";
-import { motion } from "framer-motion";
 
 export const Customers = () => {
   const {
@@ -94,12 +93,10 @@ export const Customers = () => {
               
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button className="w-full sm:w-auto">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Customer
-                    </Button>
-                  </motion.div>
+                  <Button className="w-full sm:w-auto">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Customer
+                  </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-hidden">
                   <DialogHeader>

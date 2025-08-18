@@ -13,15 +13,9 @@ import {
 } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, FileText, DollarSign, CreditCard, Receipt, Printer, Download } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
-import { FadeIn } from "@/components/ui/fade-in";
-import { StaggerContainer } from "@/components/ui/stagger-container";
-import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { motion } from "framer-motion";
 
 interface Invoice {
   id: string;
@@ -133,19 +127,14 @@ export const Billing = () => {
     status: "Draft"
   });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const filteredInvoices = invoices.filter(invoice =>
     invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddInvoice = async () => {
+  const handleAddInvoice = () => {
     if (newInvoice.customerName && newInvoice.dueDate) {
-      setIsLoading(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const invoice: Invoice = {
         id: `INV-2024-${String(invoices.length + 1).padStart(3, '0')}`,
         customerId: `CUST-${String(invoices.length + 1).padStart(3, '0')}`,
@@ -165,7 +154,6 @@ export const Billing = () => {
       setInvoices([...invoices, invoice]);
       setNewInvoice({ items: [], status: "Draft" });
       setIsAddDialogOpen(false);
-      setIsLoading(false);
       showSuccess("Invoice created successfully!");
     }
   };
@@ -187,233 +175,198 @@ export const Billing = () => {
   const totalInvoices = invoices.length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 space-y-6">
-        <FadeIn>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Billing & Invoices</h1>
-              <p className="text-gray-600 text-sm sm:text-base">Manage invoices, payments, and billing records</p>
-            </div>
-            
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button className="w-full sm:w-auto">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Invoice
-                  </Button>
-                </motion.div>
-              </DialogTrigger>
-              <DialogContent className="max-w-md mx-4 sm:mx-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Invoice</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="customerName">Customer Name</Label>
-                    <Input
-                      id="customerName"
-                      value={newInvoice.customerName || ""}
-                      onChange={(e) => setNewInvoice({...newInvoice, customerName: e.target.value})}
-                      placeholder="Enter customer name"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="dueDate">Due Date</Label>
-                    <Input
-                      id="dueDate"
-                      type="date"
-                      value={newInvoice.dueDate || ""}
-                      onChange={(e) => setNewInvoice({...newInvoice, dueDate: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="paymentMethod">Payment Method</Label>
-                    <Select onValueChange={(value) => setNewInvoice({...newInvoice, paymentMethod: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Cash">Cash</SelectItem>
-                        <SelectItem value="Card">Credit/Debit Card</SelectItem>
-                        <SelectItem value="Digital">Digital Payment</SelectItem>
-                        <SelectItem value="Insurance">Insurance</SelectItem>
-                        <SelectItem value="Check">Check</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="text-sm text-gray-600">
-                    Note: Items can be added after creating the invoice.
-                  </div>
-                  
-                  <Button onClick={handleAddInvoice} className="w-full" disabled={isLoading}>
-                    {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                    Create Invoice
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </FadeIn>
-
-        {/* Stats Cards */}
-        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-            <Card className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                      $<AnimatedCounter value={totalRevenue} />
-                    </p>
-                  </div>
-                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-            <Card className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pending Amount</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                      $<AnimatedCounter value={pendingAmount} />
-                    </p>
-                  </div>
-                  <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-            <Card className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Overdue Amount</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                      $<AnimatedCounter value={overdueAmount} />
-                    </p>
-                  </div>
-                  <Receipt className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-            <Card className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Invoices</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                      <AnimatedCounter value={totalInvoices} />
-                    </p>
-                  </div>
-                  <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </StaggerContainer>
-
-        {/* Search */}
-        <FadeIn delay={200}>
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Billing & Invoices</h1>
+          <p className="text-gray-600">Manage invoices, payments, and billing records</p>
+        </div>
+        
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Invoice
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Invoice</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="customerName">Customer Name</Label>
                 <Input
-                  placeholder="Search invoices by ID or customer name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  id="customerName"
+                  value={newInvoice.customerName || ""}
+                  onChange={(e) => setNewInvoice({...newInvoice, customerName: e.target.value})}
+                  placeholder="Enter customer name"
                 />
               </div>
-            </CardContent>
-          </Card>
-        </FadeIn>
-
-        {/* Invoices Table */}
-        <FadeIn delay={300}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg sm:text-xl">
-                <FileText className="h-5 w-5 mr-2" />
-                Invoice Records ({filteredInvoices.length} invoices)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[120px]">Invoice ID</TableHead>
-                      <TableHead className="min-w-[150px]">Customer</TableHead>
-                      <TableHead className="min-w-[100px]">Issue Date</TableHead>
-                      <TableHead className="min-w-[100px]">Due Date</TableHead>
-                      <TableHead className="min-w-[100px]">Amount</TableHead>
-                      <TableHead className="min-w-[100px]">Status</TableHead>
-                      <TableHead className="min-w-[120px]">Payment Method</TableHead>
-                      <TableHead className="min-w-[120px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInvoices.map((invoice, index) => (
-                      <motion.tr
-                        key={invoice.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <TableCell className="font-medium">{invoice.id}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{invoice.customerName}</p>
-                            <p className="text-sm text-gray-600">{invoice.customerId}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{invoice.issueDate}</TableCell>
-                        <TableCell>{invoice.dueDate}</TableCell>
-                        <TableCell className="font-medium">${invoice.total.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusColor(invoice.status) as any}>
-                            {invoice.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{invoice.paymentMethod}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                              <Printer className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                  </TableBody>
-                </Table>
+              
+              <div>
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={newInvoice.dueDate || ""}
+                  onChange={(e) => setNewInvoice({...newInvoice, dueDate: e.target.value})}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </FadeIn>
+              
+              <div>
+                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Select onValueChange={(value) => setNewInvoice({...newInvoice, paymentMethod: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="Card">Credit/Debit Card</SelectItem>
+                    <SelectItem value="Digital">Digital Payment</SelectItem>
+                    <SelectItem value="Insurance">Insurance</SelectItem>
+                    <SelectItem value="Check">Check</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                Note: Items can be added after creating the invoice.
+              </div>
+              
+              <Button onClick={handleAddInvoice} className="w-full">
+                Create Invoice
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold text-gray-900">${totalRevenue.toFixed(2)}</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pending Amount</p>
+                <p className="text-2xl font-bold text-gray-900">${pendingAmount.toFixed(2)}</p>
+              </div>
+              <CreditCard className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Overdue Amount</p>
+                <p className="text-2xl font-bold text-gray-900">${overdueAmount.toFixed(2)}</p>
+              </div>
+              <Receipt className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                <p className="text-2xl font-bold text-gray-900">{totalInvoices}</p>
+              </div>
+              <FileText className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search invoices by ID or customer name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Invoices Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileText className="h-5 w-5 mr-2" />
+            Invoice Records ({filteredInvoices.length} invoices)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice ID</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Issue Date</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Payment Method</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.map((invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell className="font-medium">{invoice.id}</TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{invoice.customerName}</p>
+                      <p className="text-sm text-gray-600">{invoice.customerId}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>{invoice.issueDate}</TableCell>
+                  <TableCell>{invoice.dueDate}</TableCell>
+                  <TableCell className="font-medium">${invoice.total.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusColor(invoice.status) as any}>
+                      {invoice.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{invoice.paymentMethod}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        <Printer className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
