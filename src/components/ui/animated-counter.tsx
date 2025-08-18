@@ -1,23 +1,18 @@
-import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useState } from "react";
 
 interface AnimatedCounterProps {
   value: number;
   duration?: number;
   prefix?: string;
   suffix?: string;
-  decimals?: number;
-  className?: string;
 }
 
-export const AnimatedCounter = ({
+export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
   value,
   duration = 1000,
   prefix = "",
-  suffix = "",
-  decimals = 0,
-  className = ""
-}: AnimatedCounterProps) => {
+  suffix = ""
+}) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -28,11 +23,7 @@ export const AnimatedCounter = ({
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
       
-      // Easing function for smooth animation
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      const currentCount = value * easeOutQuart;
-      
-      setCount(currentCount);
+      setCount(Math.floor(progress * value));
 
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate);
@@ -48,13 +39,9 @@ export const AnimatedCounter = ({
     };
   }, [value, duration]);
 
-  const formatNumber = (num: number) => {
-    return decimals > 0 ? num.toFixed(decimals) : Math.floor(num).toString();
-  };
-
   return (
-    <span className={cn("font-bold", className)}>
-      {prefix}{formatNumber(count)}{suffix}
+    <span>
+      {prefix}{count.toLocaleString()}{suffix}
     </span>
   );
 };

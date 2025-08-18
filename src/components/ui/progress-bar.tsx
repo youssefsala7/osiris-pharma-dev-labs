@@ -1,20 +1,21 @@
+import React from "react";
 import { cn } from "@/lib/utils";
 
 interface ProgressBarProps {
   value: number;
-  max?: number;
+  max: number;
   className?: string;
-  showLabel?: boolean;
   color?: "blue" | "green" | "red" | "yellow" | "purple";
+  showLabel?: boolean;
 }
 
-export const ProgressBar = ({
+export const ProgressBar: React.FC<ProgressBarProps> = ({
   value,
-  max = 100,
-  className = "",
-  showLabel = false,
-  color = "blue"
-}: ProgressBarProps) => {
+  max,
+  className,
+  color = "blue",
+  showLabel = false
+}) => {
   const percentage = Math.min((value / max) * 100, 100);
 
   const colorClasses = {
@@ -29,16 +30,14 @@ export const ProgressBar = ({
     <div className={cn("w-full", className)}>
       <div className="w-full bg-gray-200 rounded-full h-2">
         <div
-          className={cn(
-            "h-2 rounded-full transition-all duration-300 ease-out",
-            colorClasses[color]
-          )}
+          className={cn("h-2 rounded-full transition-all duration-300", colorClasses[color])}
           style={{ width: `${percentage}%` }}
         />
       </div>
       {showLabel && (
-        <div className="text-xs text-gray-600 mt-1">
-          {value} / {max} ({percentage.toFixed(1)}%)
+        <div className="flex justify-between text-xs text-gray-600 mt-1">
+          <span>{value.toLocaleString()}</span>
+          <span>{max.toLocaleString()}</span>
         </div>
       )}
     </div>

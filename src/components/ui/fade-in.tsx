@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 
 interface FadeInProps {
@@ -8,31 +8,19 @@ interface FadeInProps {
   className?: string;
 }
 
-export const FadeIn = ({ 
-  children, 
-  delay = 0, 
-  duration = 500, 
-  className = "" 
-}: FadeInProps) => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [delay]);
-
+export const FadeIn: React.FC<FadeInProps> = ({
+  children,
+  delay = 0,
+  duration = 500,
+  className
+}) => {
   return (
     <div
-      className={cn(
-        "transition-all ease-out",
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
-        className
-      )}
+      className={cn("animate-in fade-in slide-in-from-bottom-4", className)}
       style={{
-        transitionDuration: `${duration}ms`,
+        animationDelay: `${delay}ms`,
+        animationDuration: `${duration}ms`,
+        animationFillMode: "both"
       }}
     >
       {children}
