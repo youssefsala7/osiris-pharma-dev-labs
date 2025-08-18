@@ -1,304 +1,186 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Search, Plus, Edit, Trash2, Users, Phone, Mail } from "lucide-react";
-import { showSuccess } from "@/utils/toast";
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  dateOfBirth: string;
-  totalPurchases: number;
-  lastVisit: string;
-  status: "Active" | "Inactive";
-}
+import { Search, Plus, Download } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { CustomerStats } from "./customers/CustomerStats";
+import { CustomerTable } from "./customers/CustomerTable";
+import { CustomerForm } from "./customers/CustomerForm";
+import { CustomerDetails } from "./customers/CustomerDetails";
+import { useCustomers } from "./customers/hooks/useCustomers";
+import { Customer, CustomerFormData } from "./customers/types";
 
 export const Customers = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [customers, setCustomers] = useState<Customer[]>([
-    {
-      id: "CUST-001",
-      name: "John Doe",
-      email: "john.doe@email.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Main St, City, State 12345",
-      dateOfBirth: "1985-03-15",
-      totalPurchases: 1250.75,
-      lastVisit: "2024-01-15",
-      status: "Active"
-    },
-    {
-      id: "CUST-002",
-      name: "Jane Smith",
-      email: "jane.smith@email.com",
-      phone: "+1 (555) 987-6543",
-      address: "456 Oak Ave, City, State 12345",
-      dateOfBirth: "1990-07-22",
-      totalPurchases: 875.50,
-      lastVisit: "2024-01-14",
-      status: "Active"
-    },
-    {
-      id: "CUST-003",
-      name: "Mike Johnson",
-      email: "mike.johnson@email.com",
-      phone: "+1 (555) 456-7890",
-      address: "789 Pine Rd, City, State 12345",
-      dateOfBirth: "1978-11-08",
-      totalPurchases: 2150.25,
-      lastVisit: "2024-01-10",
-      status: "Active"
-    },
-  ]);
+  const {
+    customers,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    stats,
+    isLoading,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    exportCustomers
+  } = useCustomers();
 
-  const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({});
+  // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm)
-  );
+  // Form states
+  const [newCustomerData, setNewCustomerData] = useState<CustomerFormData>({});
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
 
-  const handleAddCustomer = () => {
-    if (newCustomer.name && newCustomer.email && newCustomer.phone) {
-      const customer: Customer = {
-        id: `CUST-${String(customers.length + 1).padStart(3, '0')}`,
-        name: newCustomer.name,
-        email: newCustomer.email,
-        phone: newCustomer.phone,
-        address: newCustomer.address || "",
-        dateOfBirth: newCustomer.dateOfBirth || "",
-        totalPurchases: 0,
-        lastVisit: new Date().toISOString().split('T')[0],
-        status: "Active",
-      };
-      
-      setCustomers([...customers, customer]);
-      setNewCustomer({});
+  const handleAddCustomer = async () => {
+    const success = await addCustomer(newCustomerData);
+    if (success) {
+      setNewCustomerData({});
       setIsAddDialogOpen(false);
-      showSuccess("Customer added successfully!");
     }
   };
 
+  const handleEditCustomer = async () => {
+    if (editingCustomer) {
+      const success = await updateCustomer(editingCustomer);
+      if (success) {
+        setEditingCustomer(null);
+        setIsEditDialogOpen(false);
+      }
+    }
+  };
+
+  const handleViewCustomer = (customer: Customer) => {
+    setViewingCustomer(customer);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditClick = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteCustomer = (id: string) => {
+    deleteCustomer(id);
+  };
+
+  const handleExportData = () => {
+    exportCustomers();
+  };
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Customer Management</h1>
-          <p className="text-gray-600">Manage your customer database and relationships</p>
-        </div>
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Customer
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add New Customer</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={newCustomer.name || ""}
-                  onChange={(e) => setNewCustomer({...newCustomer, name: e.target.value})}
-                  placeholder="Enter customer name"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newCustomer.email || ""}
-                  onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
-                  placeholder="Enter email address"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={newCustomer.phone || ""}
-                  onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
-                  placeholder="Enter phone number"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={newCustomer.address || ""}
-                  onChange={(e) => setNewCustomer({...newCustomer, address: e.target.value})}
-                  placeholder="Enter address"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={newCustomer.dateOfBirth || ""}
-                  onChange={(e) => setNewCustomer({...newCustomer, dateOfBirth: e.target.value})}
-                />
-              </div>
-              
-              <Button onClick={handleAddCustomer} className="w-full">
-                Add Customer
-              </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-4 sm:p-6 space-y-6">
+        <FadeIn>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Customer Management</h1>
+              <p className="text-gray-600 text-sm sm:text-base">Manage your customer database and relationships</p>
             </div>
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={handleExportData} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+                {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                Export
+              </Button>
+              
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Customer
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-hidden">
+                  <DialogHeader>
+                    <DialogTitle>Add New Customer</DialogTitle>
+                  </DialogHeader>
+                  <CustomerForm
+                    formData={newCustomerData}
+                    onFormDataChange={setNewCustomerData}
+                    onSubmit={handleAddCustomer}
+                    isLoading={isLoading}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </FadeIn>
+
+        <CustomerStats stats={stats} />
+
+        {/* Search and Filters */}
+        <FadeIn delay={200}>
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search customers by name, email, or phone..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Customers</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </FadeIn>
+
+        <CustomerTable
+          customers={customers}
+          onView={handleViewCustomer}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteCustomer}
+          isLoading={isLoading}
+        />
+
+        {/* View Customer Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Customer Details</DialogTitle>
+            </DialogHeader>
+            {viewingCustomer && <CustomerDetails customer={viewingCustomer} />}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Customer Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Edit Customer</DialogTitle>
+            </DialogHeader>
+            {editingCustomer && (
+              <CustomerForm
+                formData={editingCustomer}
+                onFormDataChange={(data) => setEditingCustomer({ ...editingCustomer, ...data })}
+                onSubmit={handleEditCustomer}
+                isLoading={isLoading}
+                isEditing={true}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Customers</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {customers.filter(c => c.status === "Active").length}
-                </p>
-              </div>
-              <Badge variant="default" className="text-lg px-3 py-1">Active</Badge>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ${customers.reduce((sum, c) => sum + c.totalPurchases, 0).toFixed(2)}
-                </p>
-              </div>
-              <div className="text-green-600 text-2xl font-bold">$</div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search customers by name, email, or phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Customers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            Customer Database ({filteredCustomers.length} customers)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Total Purchases</TableHead>
-                <TableHead>Last Visit</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCustomers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{customer.name}</p>
-                      <p className="text-sm text-gray-600">{customer.address}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center text-sm">
-                        <Mail className="h-3 w-3 mr-1" />
-                        {customer.email}
-                      </div>
-                      <div className="flex items-center text-sm">
-                        <Phone className="h-3 w-3 mr-1" />
-                        {customer.phone}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>${customer.totalPurchases.toFixed(2)}</TableCell>
-                  <TableCell>{customer.lastVisit}</TableCell>
-                  <TableCell>
-                    <Badge variant={customer.status === "Active" ? "default" : "secondary"}>
-                      {customer.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   );
 };
