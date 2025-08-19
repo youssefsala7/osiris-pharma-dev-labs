@@ -390,7 +390,7 @@ export const Settings = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="English">English</Item>
                       <SelectItem value="Arabic">Arabic</SelectItem>
                     </SelectContent>
                   </Select>
