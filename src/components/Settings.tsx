@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,18 +18,25 @@ import {
   Printer,
   Mail,
   Save,
+  Image as ImageIcon,
+  MapPin,
 } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
+import { useAppSettings } from "@/providers/AppSettingsProvider";
 
 export const Settings = () => {
+  const { settings, setSettings, updateSettings } = useAppSettings();
+
   const [pharmacySettings, setPharmacySettings] = useState({
-    name: "PharmaCare Pharmacy",
-    address: "123 Main Street, City, State 12345",
-    phone: "+1 (555) 123-4567",
-    email: "info@pharmacare.com",
+    name: settings.pharmacyName || "Al Kindi Pharmacy",
+    address: "",
+    phone: "+971 00 000 0000",
+    email: "info@alkindi.ae",
     license: "PHARM-12345",
     taxId: "TAX-67890",
-    operatingHours: "Mon-Fri: 8AM-8PM, Sat: 9AM-6PM, Sun: 10AM-4PM"
+    operatingHours: "Mon-Sun: 8AM-10PM",
+    location: settings.location || "Sharjah",
+    logoUrl: settings.logoUrl || "",
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -43,8 +50,8 @@ export const Settings = () => {
   });
 
   const [systemSettings, setSystemSettings] = useState({
-    currency: "USD",
-    timezone: "America/New_York",
+    currency: settings.currency.code || "AED",
+    timezone: "Asia/Dubai",
     dateFormat: "MM/DD/YYYY",
     language: "English",
     autoBackup: true,
@@ -52,7 +59,26 @@ export const Settings = () => {
     sessionTimeout: "30"
   });
 
+  useEffect(() => {
+    // keep in sync if context changes externally
+    setPharmacySettings((prev) => ({
+      ...prev,
+      name: settings.pharmacyName,
+      location: settings.location,
+      logoUrl: settings.logoUrl || "",
+    }));
+    setSystemSettings((prev) => ({
+      ...prev,
+      currency: settings.currency.code,
+    }));
+  }, [settings]);
+
   const handleSavePharmacySettings = () => {
+    updateSettings({
+      pharmacyName: pharmacySettings.name,
+      location: pharmacySettings.location,
+      logoUrl: pharmacySettings.logoUrl,
+    });
     showSuccess("Pharmacy settings saved successfully!");
   };
 
@@ -61,6 +87,25 @@ export const Settings = () => {
   };
 
   const handleSaveSystemSettings = () => {
+    // Update currency mapping
+    const currencyMap: Record<string, { symbol: string; locale: string }> = {
+      AED: { symbol: "AED", locale: "en-AE" },
+      USD: { symbol: "$", locale: "en-US" },
+      EUR: { symbol: "€", locale: "de-DE" },
+      GBP: { symbol: "£", locale: "en-GB" },
+      SAR: { symbol: "SAR", locale: "ar-SA" },
+    };
+    const map = currencyMap[systemSettings.currency] || currencyMap["AED"];
+
+    setSettings((prev) => ({
+      ...prev,
+      currency: {
+        code: systemSettings.currency,
+        symbol: map.symbol,
+        position: "prefix",
+        locale: map.locale,
+      },
+    }));
     showSuccess("System settings saved successfully!");
   };
 
@@ -92,32 +137,54 @@ export const Settings = () => {
         <TabsContent value="pharmacy">
           <StandardCard title="Pharmacy Information">
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="pharmacyName">Pharmacy Name</Label>
-                  <Input
-                    id="pharmacyName"
-                    value={pharmacySettings.name}
-                    onChange={(e) => setPharmacySettings({...pharmacySettings, name: e.target.value})}
-                  />
+              {/* Branding block */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-4">
+                  <div>
+                    <Label htmlFor="pharmacyName">Pharmacy Name</Label>
+                    <Input
+                      id="pharmacyName"
+                      value={pharmacySettings.name}
+                      onChange={(e) => setPharmacySettings({...pharmacySettings, name: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="location">Location (City)</Label>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <Input
+                        id="location"
+                        value={pharmacySettings.location}
+                        onChange={(e) => setPharmacySettings({...pharmacySettings, location: e.target.value})}
+                        placeholder="Sharjah"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="logoUrl">Logo URL</Label>
+                    <Input
+                      id="logoUrl"
+                      value={pharmacySettings.logoUrl}
+                      onChange={(e) => setPharmacySettings({...pharmacySettings, logoUrl: e.target.value})}
+                      placeholder="https://example.com/logo.png"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Use a square image (PNG/SVG), 256–512px recommended.</p>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="license">License Number</Label>
-                  <Input
-                    id="license"
-                    value={pharmacySettings.license}
-                    onChange={(e) => setPharmacySettings({...pharmacySettings, license: e.target.value})}
-                  />
+                <div className="flex flex-col items-center justify-center border rounded-lg p-4 bg-gray-50">
+                  <div className="text-xs text-gray-500 mb-2">Logo Preview</div>
+                  {pharmacySettings.logoUrl ? (
+                    <img
+                      src={pharmacySettings.logoUrl}
+                      alt="Logo preview"
+                      className="w-24 h-24 rounded-lg object-cover border bg-white"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-lg bg-white border flex items-center justify-center text-gray-400">
+                      <ImageIcon className="h-6 w-6" />
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Textarea
-                  id="address"
-                  value={pharmacySettings.address}
-                  onChange={(e) => setPharmacySettings({...pharmacySettings, address: e.target.value})}
-                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -141,12 +208,39 @@ export const Settings = () => {
               </div>
 
               <div>
-                <Label htmlFor="operatingHours">Operating Hours</Label>
+                <Label htmlFor="address">Address</Label>
                 <Textarea
-                  id="operatingHours"
-                  value={pharmacySettings.operatingHours}
-                  onChange={(e) => setPharmacySettings({...pharmacySettings, operatingHours: e.target.value})}
+                  id="address"
+                  value={pharmacySettings.address}
+                  onChange={(e) => setPharmacySettings({...pharmacySettings, address: e.target.value})}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label htmlFor="license">License Number</Label>
+                  <Input
+                    id="license"
+                    value={pharmacySettings.license}
+                    onChange={(e) => setPharmacySettings({...pharmacySettings, license: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="taxId">Tax ID</Label>
+                  <Input
+                    id="taxId"
+                    value={pharmacySettings.taxId}
+                    onChange={(e) => setPharmacySettings({...pharmacySettings, taxId: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="operatingHours">Operating Hours</Label>
+                  <Input
+                    id="operatingHours"
+                    value={pharmacySettings.operatingHours}
+                    onChange={(e) => setPharmacySettings({...pharmacySettings, operatingHours: e.target.value})}
+                  />
+                </div>
               </div>
 
               <Button onClick={handleSavePharmacySettings}>
@@ -252,25 +346,23 @@ export const Settings = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="AED">AED - United Arab Emirates Dirham</SelectItem>
                       <SelectItem value="USD">USD - US Dollar</SelectItem>
                       <SelectItem value="EUR">EUR - Euro</SelectItem>
                       <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                      <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                      <SelectItem value="SAR">SAR - Saudi Riyal</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="timezone">Timezone</Label>
-                  <Select value={systemSettings.timezone} onValueChange={(value) => setSystemSettings({...systemSettings, timezone: value})}>
+                  <Select value={"Asia/Dubai"} onValueChange={() => {}}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                      <SelectItem value="Asia/Dubai">Gulf Standard Time (Dubai)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -298,10 +390,8 @@ export const Settings = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="Spanish">Spanish</SelectItem>
-                      <SelectItem value="French">French</SelectItem>
-                      <SelectItem value="German">German</SelectItem>
+                      <SelectItem value="English">English</Item>
+                      <SelectItem value="Arabic">Arabic</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -319,14 +409,14 @@ export const Settings = () => {
                   </div>
                   <Switch
                     id="autoBackup"
-                    checked={systemSettings.autoBackup}
-                    onCheckedChange={(checked) => setSystemSettings({...systemSettings, autoBackup: checked})}
+                    checked={true}
+                    onCheckedChange={() => {}}
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="backupFrequency">Backup Frequency</Label>
-                  <Select value={systemSettings.backupFrequency} onValueChange={(value) => setSystemSettings({...systemSettings, backupFrequency: value})}>
+                  <Select value={"daily"} onValueChange={() => {}}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

@@ -1,6 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useAppSettings } from "@/providers/AppSettingsProvider";
+import { useCurrency } from "@/hooks/use-currency";
 
 export type ReceiptItem = {
   name: string;
@@ -28,6 +30,9 @@ interface ReceiptPreviewProps {
 }
 
 export const ReceiptPreview = ({ open, onOpenChange, receipt }: ReceiptPreviewProps) => {
+  const { settings } = useAppSettings();
+  const { format } = useCurrency();
+
   if (!receipt) return null;
 
   return (
@@ -38,8 +43,13 @@ export const ReceiptPreview = ({ open, onOpenChange, receipt }: ReceiptPreviewPr
         </DialogHeader>
         <div className="text-sm">
           <div className="text-center">
-            <div className="font-semibold">PharmaCare Pharmacy</div>
-            <div className="text-xs text-gray-600">123 Main Street • (555) 123-4567</div>
+            <div className="flex items-center justify-center gap-2">
+              {settings.logoUrl ? (
+                <img src={settings.logoUrl} alt={settings.pharmacyName} className="w-8 h-8 rounded object-cover border" />
+              ) : null}
+              <div className="font-semibold">{settings.pharmacyName || "Al Kindi Pharmacy"}</div>
+            </div>
+            <div className="text-xs text-gray-600">{settings.location || "Sharjah"}</div>
           </div>
           <Separator className="my-2" />
           <div className="flex justify-between">
@@ -54,27 +64,27 @@ export const ReceiptPreview = ({ open, onOpenChange, receipt }: ReceiptPreviewPr
               <div key={idx} className="flex justify-between">
                 <div className="min-w-0">
                   <div className="truncate">{it.name}</div>
-                  <div className="text-xs text-gray-600">x{it.qty} @ ${it.price.toFixed(2)}</div>
+                  <div className="text-xs text-gray-600">x{it.qty} @ {format(it.price)}</div>
                 </div>
-                <div className="font-medium">${it.total.toFixed(2)}</div>
+                <div className="font-medium">{format(it.total)}</div>
               </div>
             ))}
           </div>
           <Separator className="my-2" />
           <div className="space-y-1">
             <div className="flex justify-between text-gray-700">
-              <div>Subtotal</div><div>${receipt.subtotal.toFixed(2)}</div>
+              <div>Subtotal</div><div>{format(receipt.subtotal)}</div>
             </div>
             {receipt.discount > 0 && (
               <div className="flex justify-between text-green-700">
-                <div>Discount</div><div>- ${receipt.discount.toFixed(2)}</div>
+                <div>Discount</div><div>- {format(receipt.discount)}</div>
               </div>
             )}
             <div className="flex justify-between text-gray-700">
-              <div>Tax</div><div>${receipt.tax.toFixed(2)}</div>
+              <div>Tax</div><div>{format(receipt.tax)}</div>
             </div>
             <div className="flex justify-between font-semibold text-base">
-              <div>Total</div><div>${receipt.total.toFixed(2)}</div>
+              <div>Total</div><div>{format(receipt.total)}</div>
             </div>
           </div>
           <Separator className="my-2" />

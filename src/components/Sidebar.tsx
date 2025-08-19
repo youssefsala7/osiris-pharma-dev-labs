@@ -24,6 +24,7 @@ import {
   Activity,
   Menu,
   X,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   Accordion,
@@ -36,6 +37,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAppSettings } from "@/providers/AppSettingsProvider";
 
 interface SidebarProps {
   currentPage: string;
@@ -110,6 +112,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { settings } = useAppSettings();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -180,6 +183,14 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
     return buttonEl;
   };
 
+  const brandInitials = (settings.pharmacyName || "Al Kindi Pharmacy")
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   const sidebarContent = (
     <>
       {/* Brand + controls */}
@@ -188,10 +199,21 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           {/* Brand */}
           {!collapsed && (
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Package className="h-5 w-5 text-white" />
+              {settings.logoUrl ? (
+                <img
+                  src={settings.logoUrl}
+                  alt={settings.pharmacyName}
+                  className="w-8 h-8 rounded-lg object-cover border"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-semibold">
+                  {brandInitials || <ImageIcon className="h-4 w-4" />}
+                </div>
+              )}
+              <div>
+                <h2 className="text-base font-bold text-gray-800">{settings.pharmacyName || "Al Kindi Pharmacy"}</h2>
+                <p className="text-xs text-gray-500">{settings.location || "Sharjah"}</p>
               </div>
-              <h2 className="text-xl font-bold text-gray-800">PharmaCare</h2>
             </div>
           )}
           {/* Collapse / Close */}
@@ -201,11 +223,12 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
               size="sm"
               onClick={() => setCollapsed(!collapsed)}
               className="p-2 hover:bg-gray-100 transition-colors"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
             </Button>
           ) : (
-            <Button variant="ghost" size="sm" onClick={() => setMobileOpen(false)} className="p-2">
+            <Button variant="ghost" size="sm" onClick={() => setMobileOpen(false)} className="p-2" aria-label="Close menu">
               <X size={16} />
             </Button>
           )}
@@ -288,7 +311,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           {(!collapsed || isMobile) && (
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Admin User</p>
-              <p className="text-xs text-gray-600">admin@pharmacare.com</p>
+              <p className="text-xs text-gray-600">admin@alkindi.ae</p>
             </div>
           )}
         </div>
@@ -305,6 +328,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           size="sm"
           onClick={() => setMobileOpen(true)}
           className="fixed top-4 left-4 z-50 md:hidden bg-white shadow-lg"
+          aria-label="Open menu"
         >
           <Menu size={20} />
         </Button>

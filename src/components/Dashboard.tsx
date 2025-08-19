@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDashboard } from "./dashboard/hooks/useDashboard";
 import { QuickSaleDialog } from "./dashboard/QuickSaleDialog";
 import { PrescriptionDialog } from "./dashboard/PrescriptionDialog";
+import { useCurrency } from "@/hooks/use-currency";
 
 export const Dashboard = () => {
   const {
@@ -46,6 +47,8 @@ export const Dashboard = () => {
   // New tidy header controls
   const [dateRange, setDateRange] = useState("30d");
   const [search, setSearch] = useState("");
+
+  const { symbol } = useCurrency();
 
   const exportSummary = () => {
     // lightweight simulated export for now
@@ -115,14 +118,14 @@ export const Dashboard = () => {
           title="Today's Sales"
           value={stats.todaysSales}
           icon={<ShoppingCart className="h-8 w-8 text-purple-600" />}
-          prefix="$"
+          prefix={`${symbol} `}
           trend={{ value: 15, isPositive: true }}
         />
         <StatCard
           title="Monthly Revenue"
           value={stats.monthlyRevenue}
           icon={<DollarSign className="h-8 w-8 text-orange-600" />}
-          prefix="$"
+          prefix={`${symbol} `}
           trend={{ value: 23, isPositive: true }}
         />
       </ResponsiveGrid>
