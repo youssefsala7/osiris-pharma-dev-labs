@@ -16,9 +16,12 @@ import { Notifications } from "@/components/Notifications";
 import { DrugInteractions } from "@/components/DrugInteractions";
 import { InsuranceClaims } from "@/components/InsuranceClaims";
 import { AuditLogs } from "@/components/AuditLogs";
+import { PlatformAdmin } from "@/components/platform/PlatformAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
+  const { profile } = useAuth();
 
   const renderPage = () => {
     switch (currentPage) {
@@ -54,6 +57,8 @@ const Index = () => {
         return <Reports />;
       case "settings":
         return <Settings />;
+      case "platform-admin":
+        return profile?.role === 'platform_owner' ? <PlatformAdmin /> : <Dashboard />;
       default:
         return <Dashboard />;
     }
