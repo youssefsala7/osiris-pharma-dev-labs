@@ -70,6 +70,17 @@ export const AppSettingsProvider = ({ children }: { children: React.ReactNode })
 
 export const useAppSettings = () => {
   const ctx = useContext(AppSettingsContext);
-  if (!ctx) throw new Error("useAppSettings must be used within AppSettingsProvider");
+  if (!ctx) {
+    if (typeof window !== "undefined" && !(window as any).__APP_SETTINGS_WARNED__) {
+      (window as any).__APP_SETTINGS_WARNED__ = true;
+      console.warn("AppSettingsProvider not found; using default settings fallback.");
+    }
+    const noop = () => {};
+    return {
+      settings: DEFAULT_SETTINGS,
+      setSettings: noop,
+      updateSettings: noop,
+    };
+  }
   return ctx;
 };
