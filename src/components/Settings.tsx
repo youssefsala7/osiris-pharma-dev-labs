@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { PageContainer } from "@/components/ui/page-container";
+import { StandardCard } from "@/components/ui/standard-card";
 import {
   Settings as SettingsIcon,
   Store,
@@ -64,12 +65,10 @@ export const Settings = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Manage your pharmacy system configuration and preferences</p>
-      </div>
-
+    <PageContainer
+      title="Settings"
+      subtitle="Manage your pharmacy system configuration and preferences"
+    >
       <Tabs defaultValue="pharmacy" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pharmacy" className="flex items-center">
@@ -91,14 +90,8 @@ export const Settings = () => {
         </TabsList>
 
         <TabsContent value="pharmacy">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Store className="h-5 w-5 mr-2" />
-                Pharmacy Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <StandardCard title="Pharmacy Information">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="pharmacyName">Pharmacy Name</Label>
@@ -160,19 +153,13 @@ export const Settings = () => {
                 <Save className="h-4 w-4 mr-2" />
                 Save Pharmacy Settings
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </StandardCard>
         </TabsContent>
 
         <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Bell className="h-5 w-5 mr-2" />
-                Notification Preferences
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <StandardCard title="Notification Preferences">
+            <div className="space-y-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Alert Settings</h3>
                 
@@ -250,19 +237,13 @@ export const Settings = () => {
                 <Save className="h-4 w-4 mr-2" />
                 Save Notification Settings
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </StandardCard>
         </TabsContent>
 
         <TabsContent value="system">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <SettingsIcon className="h-5 w-5 mr-2" />
-                System Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <StandardCard title="System Configuration">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="currency">Currency</Label>
@@ -363,19 +344,13 @@ export const Settings = () => {
                 <Save className="h-4 w-4 mr-2" />
                 Save System Settings
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </StandardCard>
         </TabsContent>
 
         <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Security Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <StandardCard title="Security Settings">
+            <div className="space-y-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Password Policy</h3>
                 <p className="text-sm text-gray-600">Configure password requirements for user accounts</p>
@@ -423,10 +398,10 @@ export const Settings = () => {
                 <Save className="h-4 w-4 mr-2" />
                 Save Security Settings
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </StandardCard>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 };

@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Search, Plus, FileText, User, Calendar, AlertCircle } from "lucide-react";
+import { PageContainer } from "@/components/ui/page-container";
+import { ResponsiveGrid } from "@/components/ui/responsive-grid";
+import { StatCard } from "@/components/ui/stat-card";
+import { StandardCard } from "@/components/ui/standard-card";
 import {
   Table,
   TableBody,
@@ -11,11 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, FileText, User, Calendar, AlertCircle } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 
 interface Prescription {
@@ -176,246 +179,206 @@ export const Prescriptions = () => {
     }
   };
 
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Prescription Management</h1>
-          <p className="text-gray-600">Manage patient prescriptions and medication orders</p>
-        </div>
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Prescription
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Prescription</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="patientName">Patient Name</Label>
-                  <Input
-                    id="patientName"
-                    value={newPrescription.patientName || ""}
-                    onChange={(e) => setNewPrescription({...newPrescription, patientName: e.target.value})}
-                    placeholder="Enter patient name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="patientId">Patient ID</Label>
-                  <Input
-                    id="patientId"
-                    value={newPrescription.patientId || ""}
-                    onChange={(e) => setNewPrescription({...newPrescription, patientId: e.target.value})}
-                    placeholder="Enter patient ID"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="doctorName">Doctor Name</Label>
-                  <Input
-                    id="doctorName"
-                    value={newPrescription.doctorName || ""}
-                    onChange={(e) => setNewPrescription({...newPrescription, doctorName: e.target.value})}
-                    placeholder="Enter doctor name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="doctorLicense">Doctor License</Label>
-                  <Input
-                    id="doctorLicense"
-                    value={newPrescription.doctorLicense || ""}
-                    onChange={(e) => setNewPrescription({...newPrescription, doctorLicense: e.target.value})}
-                    placeholder="Enter license number"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <Input
-                    id="expiryDate"
-                    type="date"
-                    value={newPrescription.expiryDate || ""}
-                    onChange={(e) => setNewPrescription({...newPrescription, expiryDate: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="totalRefills">Total Refills</Label>
-                  <Input
-                    id="totalRefills"
-                    type="number"
-                    value={newPrescription.totalRefills || ""}
-                    onChange={(e) => setNewPrescription({...newPrescription, totalRefills: Number(e.target.value), refillsRemaining: Number(e.target.value)})}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={newPrescription.notes || ""}
-                  onChange={(e) => setNewPrescription({...newPrescription, notes: e.target.value})}
-                  placeholder="Enter any special notes or instructions"
-                />
-              </div>
-              
-              <div className="text-sm text-gray-600">
-                Note: In a full implementation, you would add medication details here with dosages and instructions.
-              </div>
-              
-              <Button onClick={handleAddPrescription} className="w-full">
-                Add Prescription
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+  const headerActions = (
+    <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
+      <Plus className="h-4 w-4 mr-2" />
+      New Prescription
+    </Button>
+  );
 
+  return (
+    <PageContainer
+      title="Prescription Management"
+      subtitle="Manage patient prescriptions and medication orders"
+      headerActions={headerActions}
+    >
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Prescriptions</p>
-                <p className="text-2xl font-bold text-gray-900">{prescriptions.length}</p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Prescriptions</p>
-                <p className="text-2xl font-bold text-gray-900">{activePrescriptions}</p>
-              </div>
-              <Badge variant="default" className="text-lg px-3 py-1">Active</Badge>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Expiring Soon</p>
-                <p className="text-2xl font-bold text-gray-900">{expiringSoon}</p>
-              </div>
-              <AlertCircle className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Filled Today</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {prescriptions.filter(p => p.status === "Filled").length}
-                </p>
-              </div>
-              <Calendar className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ResponsiveGrid cols={4}>
+        <StatCard
+          title="Total Prescriptions"
+          value={prescriptions.length}
+          icon={<FileText className="h-8 w-8 text-blue-600" />}
+        />
+        <StatCard
+          title="Active Prescriptions"
+          value={activePrescriptions}
+          icon={<User className="h-8 w-8 text-green-600" />}
+        />
+        <StatCard
+          title="Expiring Soon"
+          value={expiringSoon}
+          icon={<AlertCircle className="h-8 w-8 text-orange-600" />}
+        />
+        <StatCard
+          title="Filled Today"
+          value={prescriptions.filter(p => p.status === "Filled").length}
+          icon={<Calendar className="h-8 w-8 text-purple-600" />}
+        />
+      </ResponsiveGrid>
 
       {/* Search */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search prescriptions by ID, patient name, or doctor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <StandardCard>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search prescriptions by ID, patient name, or doctor..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </StandardCard>
 
       {/* Prescriptions Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="h-5 w-5 mr-2" />
-            Prescription Database ({filteredPrescriptions.length} prescriptions)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Prescription ID</TableHead>
-                <TableHead>Patient</TableHead>
-                <TableHead>Doctor</TableHead>
-                <TableHead>Medications</TableHead>
-                <TableHead>Issue Date</TableHead>
-                <TableHead>Expiry Date</TableHead>
-                <TableHead>Refills</TableHead>
-                <TableHead>Status</TableHead>
+      <StandardCard title={`Prescription Database (${filteredPrescriptions.length} prescriptions)`}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Prescription ID</TableHead>
+              <TableHead>Patient</TableHead>
+              <TableHead>Doctor</TableHead>
+              <TableHead>Medications</TableHead>
+              <TableHead>Issue Date</TableHead>
+              <TableHead>Expiry Date</TableHead>
+              <TableHead>Refills</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredPrescriptions.map((prescription) => (
+              <TableRow key={prescription.id}>
+                <TableCell className="font-medium">{prescription.id}</TableCell>
+                <TableCell>
+                  <div>
+                    <p className="font-medium">{prescription.patientName}</p>
+                    <p className="text-sm text-gray-600">{prescription.patientId}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <p className="font-medium">{prescription.doctorName}</p>
+                    <p className="text-sm text-gray-600">{prescription.doctorLicense}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    {prescription.medications.map((med, index) => (
+                      <div key={index} className="text-sm">
+                        <p className="font-medium">{med.medicineName}</p>
+                        <p className="text-gray-600">{med.dosage} - {med.frequency}</p>
+                      </div>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>{prescription.issueDate}</TableCell>
+                <TableCell>{prescription.expiryDate}</TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    <p>{prescription.refillsRemaining} / {prescription.totalRefills}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getStatusColor(prescription.status) as any}>
+                    {prescription.status}
+                  </Badge>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPrescriptions.map((prescription) => (
-                <TableRow key={prescription.id}>
-                  <TableCell className="font-medium">{prescription.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{prescription.patientName}</p>
-                      <p className="text-sm text-gray-600">{prescription.patientId}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{prescription.doctorName}</p>
-                      <p className="text-sm text-gray-600">{prescription.doctorLicense}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      {prescription.medications.map((med, index) => (
-                        <div key={index} className="text-sm">
-                          <p className="font-medium">{med.medicineName}</p>
-                          <p className="text-gray-600">{med.dosage} - {med.frequency}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>{prescription.issueDate}</TableCell>
-                  <TableCell>{prescription.expiryDate}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p>{prescription.refillsRemaining} / {prescription.totalRefills}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusColor(prescription.status) as any}>
-                      {prescription.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+            ))}
+          </TableBody>
+        </Table>
+      </StandardCard>
+
+      {/* Add Prescription Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Prescription</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="patientName">Patient Name</Label>
+                <Input
+                  id="patientName"
+                  value={newPrescription.patientName || ""}
+                  onChange={(e) => setNewPrescription({...newPrescription, patientName: e.target.value})}
+                  placeholder="Enter patient name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="patientId">Patient ID</Label>
+                <Input
+                  id="patientId"
+                  value={newPrescription.patientId || ""}
+                  onChange={(e) => setNewPrescription({...newPrescription, patientId: e.target.value})}
+                  placeholder="Enter patient ID"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="doctorName">Doctor Name</Label>
+                <Input
+                  id="doctorName"
+                  value={newPrescription.doctorName || ""}
+                  onChange={(e) => setNewPrescription({...newPrescription, doctorName: e.target.value})}
+                  placeholder="Enter doctor name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="doctorLicense">Doctor License</Label>
+                <Input
+                  id="doctorLicense"
+                  value={newPrescription.doctorLicense || ""}
+                  onChange={(e) => setNewPrescription({...newPrescription, doctorLicense: e.target.value})}
+                  placeholder="Enter license number"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="expiryDate">Expiry Date</Label>
+                <Input
+                  id="expiryDate"
+                  type="date"
+                  value={newPrescription.expiryDate || ""}
+                  onChange={(e) => setNewPrescription({...newPrescription, expiryDate: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="totalRefills">Total Refills</Label>
+                <Input
+                  id="totalRefills"
+                  type="number"
+                  value={newPrescription.totalRefills || ""}
+                  onChange={(e) => setNewPrescription({...newPrescription, totalRefills: Number(e.target.value), refillsRemaining: Number(e.target.value)})}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={newPrescription.notes || ""}
+                onChange={(e) => setNewPrescription({...newPrescription, notes: e.target.value})}
+                placeholder="Enter any special notes or instructions"
+              />
+            </div>
+            
+            <div className="text-sm text-gray-600">
+              Note: In a full implementation, you would add medication details here with dosages and instructions.
+            </div>
+            
+            <Button onClick={handleAddPrescription} className="w-full">
+              Add Prescription
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </PageContainer>
   );
 };

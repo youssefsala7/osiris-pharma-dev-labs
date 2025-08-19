@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Plus, FileText, DollarSign, CreditCard, Receipt, Printer, Download } from "lucide-react";
+import { PageContainer } from "@/components/ui/page-container";
+import { ResponsiveGrid } from "@/components/ui/responsive-grid";
+import { StatCard } from "@/components/ui/stat-card";
+import { StandardCard } from "@/components/ui/standard-card";
 import {
   Table,
   TableBody,
@@ -11,10 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, FileText, DollarSign, CreditCard, Receipt, Printer, Download } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 
 interface Invoice {
@@ -174,199 +177,170 @@ export const Billing = () => {
   const overdueAmount = invoices.filter(i => i.status === "Overdue").reduce((sum, i) => sum + i.total, 0);
   const totalInvoices = invoices.length;
 
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Billing & Invoices</h1>
-          <p className="text-gray-600">Manage invoices, payments, and billing records</p>
-        </div>
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Invoice
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create New Invoice</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="customerName">Customer Name</Label>
-                <Input
-                  id="customerName"
-                  value={newInvoice.customerName || ""}
-                  onChange={(e) => setNewInvoice({...newInvoice, customerName: e.target.value})}
-                  placeholder="Enter customer name"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="dueDate">Due Date</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={newInvoice.dueDate || ""}
-                  onChange={(e) => setNewInvoice({...newInvoice, dueDate: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="paymentMethod">Payment Method</Label>
-                <Select onValueChange={(value) => setNewInvoice({...newInvoice, paymentMethod: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="Card">Credit/Debit Card</SelectItem>
-                    <SelectItem value="Digital">Digital Payment</SelectItem>
-                    <SelectItem value="Insurance">Insurance</SelectItem>
-                    <SelectItem value="Check">Check</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="text-sm text-gray-600">
-                Note: Items can be added after creating the invoice.
-              </div>
-              
-              <Button onClick={handleAddInvoice} className="w-full">
-                Create Invoice
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+  const headerActions = (
+    <>
+      <Button variant="outline" className="w-full sm:w-auto">
+        <Download className="h-4 w-4 mr-2" />
+        Export
+      </Button>
+      <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
+        <Plus className="h-4 w-4 mr-2" />
+        Create Invoice
+      </Button>
+    </>
+  );
 
+  return (
+    <PageContainer
+      title="Billing & Invoices"
+      subtitle="Manage invoices, payments, and billing records"
+      headerActions={headerActions}
+    >
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${totalRevenue.toFixed(2)}</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending Amount</p>
-                <p className="text-2xl font-bold text-gray-900">${pendingAmount.toFixed(2)}</p>
-              </div>
-              <CreditCard className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Overdue Amount</p>
-                <p className="text-2xl font-bold text-gray-900">${overdueAmount.toFixed(2)}</p>
-              </div>
-              <Receipt className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Invoices</p>
-                <p className="text-2xl font-bold text-gray-900">{totalInvoices}</p>
-              </div>
-              <FileText className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ResponsiveGrid cols={4}>
+        <StatCard
+          title="Total Revenue"
+          value={totalRevenue}
+          icon={<DollarSign className="h-8 w-8 text-green-600" />}
+          prefix="$"
+        />
+        <StatCard
+          title="Pending Amount"
+          value={pendingAmount}
+          icon={<CreditCard className="h-8 w-8 text-blue-600" />}
+          prefix="$"
+        />
+        <StatCard
+          title="Overdue Amount"
+          value={overdueAmount}
+          icon={<Receipt className="h-8 w-8 text-red-600" />}
+          prefix="$"
+        />
+        <StatCard
+          title="Total Invoices"
+          value={totalInvoices}
+          icon={<FileText className="h-8 w-8 text-purple-600" />}
+        />
+      </ResponsiveGrid>
 
       {/* Search */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search invoices by ID or customer name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <StandardCard>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search invoices by ID or customer name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </StandardCard>
 
       {/* Invoices Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="h-5 w-5 mr-2" />
-            Invoice Records ({filteredInvoices.length} invoices)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Issue Date</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Payment Method</TableHead>
-                <TableHead>Actions</TableHead>
+      <StandardCard title={`Invoice Records (${filteredInvoices.length} invoices)`}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Invoice ID</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Issue Date</TableHead>
+              <TableHead>Due Date</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Payment Method</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredInvoices.map((invoice) => (
+              <TableRow key={invoice.id}>
+                <TableCell className="font-medium">{invoice.id}</TableCell>
+                <TableCell>
+                  <div>
+                    <p className="font-medium">{invoice.customerName}</p>
+                    <p className="text-sm text-gray-600">{invoice.customerId}</p>
+                  </div>
+                </TableCell>
+                <TableCell>{invoice.issueDate}</TableCell>
+                <TableCell>{invoice.dueDate}</TableCell>
+                <TableCell className="font-medium">${invoice.total.toFixed(2)}</TableCell>
+                <TableCell>
+                  <Badge variant={getStatusColor(invoice.status) as any}>
+                    {invoice.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{invoice.paymentMethod}</Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm">
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{invoice.customerName}</p>
-                      <p className="text-sm text-gray-600">{invoice.customerId}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{invoice.issueDate}</TableCell>
-                  <TableCell>{invoice.dueDate}</TableCell>
-                  <TableCell className="font-medium">${invoice.total.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusColor(invoice.status) as any}>
-                      {invoice.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{invoice.paymentMethod}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+            ))}
+          </TableBody>
+        </Table>
+      </StandardCard>
+
+      {/* Add Invoice Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-md mx-4 sm:mx-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="customerName">Customer Name</Label>
+              <Input
+                id="customerName"
+                value={newInvoice.customerName || ""}
+                onChange={(e) => setNewInvoice({...newInvoice, customerName: e.target.value})}
+                placeholder="Enter customer name"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="dueDate">Due Date</Label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={newInvoice.dueDate || ""}
+                onChange={(e) => setNewInvoice({...newInvoice, dueDate: e.target.value})}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Select onValueChange={(value) => setNewInvoice({...newInvoice, paymentMethod: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                  <SelectItem value="Card">Credit/Debit Card</SelectItem>
+                  <SelectItem value="Digital">Digital Payment</SelectItem>
+                  <SelectItem value="Insurance">Insurance</SelectItem>
+                  <SelectItem value="Check">Check</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="text-sm text-gray-600">
+              Note: Items can be added after creating the invoice.
+            </div>
+            
+            <Button onClick={handleAddInvoice} className="w-full">
+              Create Invoice
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </PageContainer>
   );
 };
