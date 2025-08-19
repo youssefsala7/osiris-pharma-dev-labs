@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Plus, Users, Settings, MapPin } from 'lucide-react';
+import { Building2, Plus, Users, Settings, MapPin, UserPlus } from 'lucide-react';
 import { showError, showSuccess } from '@/utils/toast';
+import { AssignOwnerDialog } from './AssignOwnerDialog';
 
 type Organization = {
   id: string;
@@ -24,6 +25,9 @@ export const PlatformAdmin = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newOrg, setNewOrg] = useState({ name: '', slug: '', type: 'pharmacy' });
+
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignOrgId, setAssignOrgId] = useState<string | null>(null);
 
   const fetchOrganizations = async () => {
     const { data, error } = await supabase
@@ -150,6 +154,7 @@ export const PlatformAdmin = () => {
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -160,12 +165,33 @@ export const PlatformAdmin = () => {
                   <TableCell><Badge variant="outline">{org.type}</Badge></TableCell>
                   <TableCell><Badge variant={org.status === 'active' ? 'default' : 'secondary'}>{org.status}</Badge></TableCell>
                   <TableCell>{new Date(org.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAssignOrgId(org.id);
+                        setAssignOpen(true);
+                      }}
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assign Owner
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <AssignOwnerDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        organizationId={assignOrgId}
+        defaultRole="owner"
+        onAssigned={fetchOrganizations}
+      />
     </div>
   );
 };
