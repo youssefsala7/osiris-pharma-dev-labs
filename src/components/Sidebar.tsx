@@ -10,7 +10,7 @@ import {
   FileText,
   ShoppingCart,
   BarChart3,
-  Settings,
+  Settings as SettingsIcon,
   ChevronLeft,
   ChevronRight,
   Truck,
@@ -25,29 +25,85 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
   currentPage: string;
   onPageChange: (page: string) => void;
 }
 
-const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: Home, notifications: 0 },
-  { id: "inventory", label: "Inventory", icon: Package, notifications: 4 },
-  { id: "customers", label: "Customers", icon: Users, notifications: 0 },
-  { id: "prescriptions", label: "Prescriptions", icon: FileText, notifications: 2 },
-  { id: "sales", label: "Sales", icon: ShoppingCart, notifications: 0 },
-  { id: "suppliers", label: "Suppliers", icon: Truck, notifications: 0 },
-  { id: "purchase-orders", label: "Purchase Orders", icon: ClipboardList, notifications: 1 },
-  { id: "billing", label: "Billing", icon: Receipt, notifications: 0 },
-  { id: "insurance-claims", label: "Insurance Claims", icon: CreditCard, notifications: 3 },
-  { id: "drug-interactions", label: "Drug Interactions", icon: Shield, notifications: 5 },
-  { id: "expired-medicines", label: "Expired Medicines", icon: AlertTriangle, notifications: 2 },
-  { id: "user-management", label: "User Management", icon: UserCheck, notifications: 0 },
-  { id: "notifications", label: "Notifications", icon: Bell, notifications: 8 },
-  { id: "audit-logs", label: "Audit Logs", icon: Activity, notifications: 0 },
-  { id: "reports", label: "Reports", icon: BarChart3, notifications: 0 },
-  { id: "settings", label: "Settings", icon: Settings, notifications: 0 },
+type NavItem = {
+  id: string;
+  label: string;
+  icon: any;
+  notifications?: number;
+};
+
+type NavGroup = {
+  id: string;
+  label: string;
+  icon?: any;
+  items: NavItem[];
+  defaultOpen?: boolean;
+};
+
+const groups: NavGroup[] = [
+  {
+    id: "operations",
+    label: "Operations",
+    items: [
+      { id: "sales", label: "POS", icon: ShoppingCart },
+      { id: "inventory", label: "Inventory", icon: Package, notifications: 4 },
+      { id: "prescriptions", label: "Prescriptions", icon: FileText, notifications: 2 },
+      { id: "suppliers", label: "Suppliers", icon: Truck },
+      { id: "purchase-orders", label: "Purchase Orders", icon: ClipboardList, notifications: 1 },
+    ],
+    defaultOpen: true,
+  },
+  {
+    id: "people",
+    label: "People",
+    items: [
+      { id: "customers", label: "Customers", icon: Users },
+      { id: "user-management", label: "User Management", icon: UserCheck },
+    ],
+  },
+  {
+    id: "finance",
+    label: "Finance",
+    items: [
+      { id: "billing", label: "Billing", icon: Receipt },
+      { id: "insurance-claims", label: "Insurance Claims", icon: CreditCard, notifications: 3 },
+      { id: "reports", label: "Reports", icon: BarChart3 },
+    ],
+  },
+  {
+    id: "compliance",
+    label: "Compliance",
+    items: [
+      { id: "drug-interactions", label: "Drug Interactions", icon: Shield, notifications: 5 },
+      { id: "expired-medicines", label: "Expired Medicines", icon: AlertTriangle, notifications: 2 },
+      { id: "audit-logs", label: "Audit Logs", icon: Activity },
+    ],
+  },
+  {
+    id: "system",
+    label: "System",
+    items: [
+      { id: "notifications", label: "Notifications", icon: Bell, notifications: 8 },
+      { id: "settings", label: "Settings", icon: SettingsIcon },
+    ],
+  },
 ];
 
 export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
@@ -64,8 +120,8 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
     };
 
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const handlePageChange = (page: string) => {
@@ -75,10 +131,61 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
     }
   };
 
+  const NavButton = ({ item, index }: { item: NavItem; index: number }) => {
+    const Icon = item.icon;
+    const isActive = currentPage === item.id;
+    const buttonEl = (
+      <Button
+        key={item.id}
+        variant={isActive ? "default" : "ghost"}
+        className={cn(
+          "w-full justify-start transition-all duration-200 hover:scale-[1.015]",
+          collapsed && !isMobile && "px-2",
+          isActive && "shadow-md"
+        )}
+        onClick={() => handlePageChange(item.id)}
+        style={{ animationDelay: `${index * 40}ms` }}
+      >
+        <div className="flex items-center w-full relative">
+          <Icon size={20} className="flex-shrink-0" />
+          {(!collapsed || isMobile) && (
+            <>
+              <span className="ml-3 flex-1 text-left">{item.label}</span>
+              {item.notifications && item.notifications > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="ml-2 h-5 min-w-[20px] px-1 flex items-center justify-center text-xs"
+                >
+                  {item.notifications > 9 ? "9+" : item.notifications}
+                </Badge>
+              )}
+            </>
+          )}
+          {collapsed && !isMobile && item.notifications && item.notifications > 0 && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+          )}
+        </div>
+      </Button>
+    );
+
+    if (collapsed && !isMobile) {
+      return (
+        <Tooltip key={item.id}>
+          <TooltipTrigger asChild>{buttonEl}</TooltipTrigger>
+          <TooltipContent side="right">{item.label}</TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return buttonEl;
+  };
+
   const sidebarContent = (
     <>
+      {/* Brand + controls */}
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+        <div className={cn("flex items-center justify-between", collapsed && !isMobile && "justify-center")}>
+          {/* Brand */}
           {!collapsed && (
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -87,7 +194,8 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
               <h2 className="text-xl font-bold text-gray-800">PharmaCare</h2>
             </div>
           )}
-          {!isMobile && (
+          {/* Collapse / Close */}
+          {!isMobile ? (
             <Button
               variant="ghost"
               size="sm"
@@ -96,67 +204,84 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
             >
               {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
             </Button>
-          )}
-          {isMobile && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMobileOpen(false)}
-              className="p-2"
-            >
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setMobileOpen(false)} className="p-2">
               <X size={16} />
             </Button>
           )}
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4">
-        <nav className="space-y-2">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = currentPage === item.id;
-            return (
-              <Button
-                key={item.id}
-                variant={isActive ? "default" : "ghost"}
+      {/* Pinned shortcuts */}
+      <div className="p-3 border-b border-gray-200">
+        <div className="flex gap-2">
+          <Button
+            variant={currentPage === "sales" ? "default" : "outline"}
+            size="sm"
+            className={cn("flex-1", collapsed && !isMobile && "justify-center px-2")}
+            onClick={() => handlePageChange("sales")}
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            {(!collapsed || isMobile) && <span>POS</span>}
+          </Button>
+          <Button
+            variant={currentPage === "dashboard" ? "default" : "outline"}
+            size="sm"
+            className={cn("flex-1", collapsed && !isMobile && "justify-center px-2")}
+            onClick={() => handlePageChange("dashboard")}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            {(!collapsed || isMobile) && <span>Dashboard</span>}
+          </Button>
+        </div>
+      </div>
+
+      {/* Grouped navigation */}
+      <ScrollArea className="flex-1 p-2">
+        <Accordion
+          type="multiple"
+          defaultValue={groups.filter(g => g.defaultOpen).map(g => g.id)}
+          className="space-y-2"
+        >
+          {groups.map((group) => (
+            <AccordionItem key={group.id} value={group.id} className="border-none">
+              <AccordionTrigger
                 className={cn(
-                  "w-full justify-start transition-all duration-200 hover:scale-105",
-                  collapsed && !isMobile && "px-2",
-                  isActive && "shadow-md"
+                  "px-2 py-2 rounded-md text-xs uppercase tracking-wide text-gray-500 hover:no-underline",
+                  collapsed && !isMobile && "justify-center"
                 )}
-                onClick={() => handlePageChange(item.id)}
-                style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="flex items-center w-full">
-                  <Icon size={20} className="flex-shrink-0" />
-                  {(!collapsed || isMobile) && (
-                    <>
-                      <span className="ml-3 flex-1 text-left">{item.label}</span>
-                      {item.notifications > 0 && (
-                        <Badge 
-                          variant="destructive" 
-                          className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
-                        >
-                          {item.notifications > 9 ? "9+" : item.notifications}
-                        </Badge>
-                      )}
-                    </>
-                  )}
-                  {collapsed && !isMobile && item.notifications > 0 && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                  )}
+                {!collapsed || isMobile ? (
+                  <span className="pl-2">{group.label}</span>
+                ) : (
+                  <span className="sr-only">{group.label}</span>
+                )}
+              </AccordionTrigger>
+              <AccordionContent className={cn("px-2", collapsed && !isMobile && "px-0")}>
+                <div className="space-y-1">
+                  {group.items.map((item, idx) => (
+                    <NavButton key={item.id} item={item} index={idx} />
+                  ))}
                 </div>
-              </Button>
-            );
-          })}
-        </nav>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </ScrollArea>
 
-      <div className="p-4 border-t border-gray-200">
-        <div className={cn(
-          "flex items-center space-x-3 p-3 bg-gray-50 rounded-lg",
-          collapsed && !isMobile && "justify-center"
-        )}>
+      {/* User quick area */}
+      <div
+        className={cn(
+          "p-4 border-t border-gray-200",
+          collapsed && !isMobile && "flex items-center justify-center"
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center space-x-3 p-3 bg-gray-50 rounded-lg w-full",
+            collapsed && !isMobile && "justify-center"
+          )}
+        >
           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
             <span className="text-white text-sm font-medium">A</span>
           </div>
@@ -186,7 +311,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
 
         {/* Mobile Overlay */}
         {mobileOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-200"
             onClick={() => setMobileOpen(false)}
           />
