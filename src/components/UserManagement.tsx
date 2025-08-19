@@ -1,15 +1,8 @@
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Edit, Trash2, Users, Shield, UserCheck, UserX, Download } from "lucide-react";
-import { PageContainer } from "@/components/ui/page-container";
-import { ResponsiveGrid } from "@/components/ui/responsive-grid";
-import { StatCard } from "@/components/ui/stat-card";
-import { StandardCard } from "@/components/ui/standard-card";
 import {
   Table,
   TableBody,
@@ -18,6 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Plus, Edit, Trash2, Users, Shield, UserCheck, UserX } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 
 interface User {
@@ -152,189 +149,223 @@ export const UserManagement = () => {
   const activeUsers = users.filter(u => u.status === "Active").length;
   const totalUsers = users.length;
 
-  const headerActions = (
-    <>
-      <Button variant="outline" className="w-full sm:w-auto">
-        <Download className="h-4 w-4 mr-2" />
-        Export
-      </Button>
-      <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
-        <Plus className="h-4 w-4 mr-2" />
-        Add User
-      </Button>
-    </>
-  );
-
   return (
-    <PageContainer
-      title="User Management"
-      subtitle="Manage system users, roles, and permissions"
-      headerActions={headerActions}
-    >
-      {/* Stats Cards */}
-      <ResponsiveGrid cols={4}>
-        <StatCard
-          title="Total Users"
-          value={totalUsers}
-          icon={<Users className="h-8 w-8 text-blue-600" />}
-        />
-        <StatCard
-          title="Active Users"
-          value={activeUsers}
-          icon={<UserCheck className="h-8 w-8 text-green-600" />}
-        />
-        <StatCard
-          title="Inactive Users"
-          value={totalUsers - activeUsers}
-          icon={<UserX className="h-8 w-8 text-red-600" />}
-        />
-        <StatCard
-          title="Admin Users"
-          value={users.filter(u => u.role === "Admin").length}
-          icon={<Shield className="h-8 w-8 text-purple-600" />}
-        />
-      </ResponsiveGrid>
-
-      {/* Search */}
-      <StandardCard>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search users by name, username, email, or role..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600">Manage system users, roles, and permissions</p>
         </div>
-      </StandardCard>
-
-      {/* Users Table */}
-      <StandardCard title={`System Users (${filteredUsers.length} users)`}>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User ID</TableHead>
-              <TableHead>User Details</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Last Login</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.id}</TableCell>
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{user.fullName}</p>
-                    <p className="text-sm text-gray-600">@{user.username}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <p className="text-sm">{user.email}</p>
-                    <p className="text-sm text-gray-600">{user.phone}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getRoleColor(user.role) as any}>
-                    {user.role}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusColor(user.status) as any}>
-                    {user.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm">{user.lastLogin}</TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </StandardCard>
-
-      {/* Add User Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md mx-4 sm:mx-auto">
-          <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={newUser.username || ""}
-                onChange={(e) => setNewUser({...newUser, username: e.target.value})}
-                placeholder="Enter username"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                value={newUser.fullName || ""}
-                onChange={(e) => setNewUser({...newUser, fullName: e.target.value})}
-                placeholder="Enter full name"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={newUser.email || ""}
-                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                placeholder="Enter email address"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={newUser.phone || ""}
-                onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
-                placeholder="Enter phone number"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="role">Role</Label>
-              <Select onValueChange={(value) => setNewUser({...newUser, role: value as any})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Pharmacist">Pharmacist</SelectItem>
-                  <SelectItem value="Cashier">Cashier</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Inventory Manager">Inventory Manager</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button onClick={handleAddUser} className="w-full">
+        
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
               Add User
             </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={newUser.username || ""}
+                  onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                  placeholder="Enter username"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  value={newUser.fullName || ""}
+                  onChange={(e) => setNewUser({...newUser, fullName: e.target.value})}
+                  placeholder="Enter full name"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newUser.email || ""}
+                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  placeholder="Enter email address"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={newUser.phone || ""}
+                  onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Select onValueChange={(value) => setNewUser({...newUser, role: value as any})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Pharmacist">Pharmacist</SelectItem>
+                    <SelectItem value="Cashier">Cashier</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Inventory Manager">Inventory Manager</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button onClick={handleAddUser} className="w-full">
+                Add User
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Active Users</p>
+                <p className="text-2xl font-bold text-gray-900">{activeUsers}</p>
+              </div>
+              <UserCheck className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Inactive Users</p>
+                <p className="text-2xl font-bold text-gray-900">{totalUsers - activeUsers}</p>
+              </div>
+              <UserX className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Admin Users</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {users.filter(u => u.role === "Admin").length}
+                </p>
+              </div>
+              <Shield className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search users by name, username, email, or role..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        </DialogContent>
-      </Dialog>
-    </PageContainer>
+        </CardContent>
+      </Card>
+
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="h-5 w-5 mr-2" />
+            System Users ({filteredUsers.length} users)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User ID</TableHead>
+                <TableHead>User Details</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Last Login</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.id}</TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{user.fullName}</p>
+                      <p className="text-sm text-gray-600">@{user.username}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <p className="text-sm">{user.email}</p>
+                      <p className="text-sm text-gray-600">{user.phone}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getRoleColor(user.role) as any}>
+                      {user.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusColor(user.status) as any}>
+                      {user.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm">{user.lastLogin}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
