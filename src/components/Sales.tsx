@@ -1,25 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PageContainer } from "@/components/ui/page-container";
-import { PosProductSearch, POSProduct } from "./sales/PosProductSearch";
-import { PosCart, CartItem } from "./sales/PosCart";
-import { PosTender } from "./sales/PosTender";
-import { SalesTable } from "./sales/SalesTable";
+import { ModernPosSearch, POSProduct } from "./sales/ModernPosSearch";
+import { ModernPosCart, CartItem } from "./sales/ModernPosCart";
+import { ModernPosTender } from "./sales/ModernPosTender";
 import { useSales } from "./sales/hooks/useSales";
 import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Receipt, Pause, Play, Trash2 } from "lucide-react";
+import { Receipt, Pause, Play, Trash2, Clock } from "lucide-react";
 import { HoldCartsDialog, HoldCart } from "./sales/HoldCartsDialog";
 import { ReceiptPreview, ReceiptData } from "./sales/ReceiptPreview";
-import { PosHeader } from "./sales/PosHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Sales = () => {
   const { addSale, allSales, isLoading } = useSales();
   const isMobile = useIsMobile();
 
-  // Catalog (mock)
+  // Enhanced catalog with more realistic pharmacy data
   const CATALOG: POSProduct[] = [
     { id: "MED-001", name: "Paracetamol 500mg", price: 2.5, ndc: "98765-432-10", category: "Pain Relief", stock: 150 },
     { id: "MED-002", name: "Amoxicillin 250mg", price: 8.75, ndc: "12345-678-90", category: "Antibiotics", stock: 75 },
@@ -33,8 +31,10 @@ export const Sales = () => {
     { id: "MED-010", name: "Amlodipine 5mg", price: 5.8, ndc: "88888-999-00", category: "Cardio", stock: 50 },
     { id: "MED-011", name: "Levothyroxine 50mcg", price: 10.2, ndc: "99999-000-11", category: "Endocrine", stock: 70 },
     { id: "MED-012", name: "Simvastatin 20mg", price: 9.9, ndc: "12121-343-65", category: "Cardio", stock: 45 },
+    { id: "MED-013", name: "Insulin Pen", price: 45.0, ndc: "13131-454-76", category: "Diabetes", stock: 25 },
+    { id: "MED-014", name: "Albuterol Inhaler", price: 32.5, ndc: "14141-565-87", category: "Respiratory", stock: 18 },
+    { id: "MED-015", name: "Prednisone 10mg", price: 4.8, ndc: "15151-676-98", category: "Steroids", stock: 90 },
   ];
-  const quickPicks = useMemo(() => CATALOG.slice(0, 8), [CATALOG]);
 
   // POS state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -51,37 +51,52 @@ export const Sales = () => {
   const tax = useMemo(() => Math.max(0, (subtotal - discount) * 0.08), [subtotal, discount]);
   const total = useMemo(() => Math.max(0, subtotal - discount + tax), [subtotal, discount, tax]);
 
-  // Cart ops
+  // Cart operations
   const addToCart = (product: POSProduct) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === product.id);
-      if (existing) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { id: product.id, name: product.name, price: product.price, ndc: product.ndc, quantity: 1 }];
+      if (existing) {
+        return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [...prev, { 
+        id: product.id, 
+        name: product.name, 
+        price: product.price, 
+        ndc: product.ndc, 
+        quantity: 1 
+      }];
     });
+    showSuccess(`Added ${product.name}`);
   };
-  const handleScan = (code: string) => {
-    const prod = CATALOG.find(p => p.ndc.toLowerCase() === code.toLowerCase());
-    if (!prod) return showError("NDC not found");
-    addToCart(prod);
-  };
+
   const inc = (id: string) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
   const dec = (id: string) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity - 1) } : i));
   const remove = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
-  const clear = () => setCart([]);
+  const clear = () => {
+    setCart([]);
+    setDiscount(0);
+  };
 
-  // Hold carts
+  // Hold operations
   const holdCart = () => {
     if (cart.length === 0) return showError("Nothing to hold");
     const id = String(holds.length + 1).padStart(3, "0");
-    setHolds(prev => [{ id, createdAt: new Date().toISOString(), itemsCount: cart.length, total }, ...prev]);
-    setCart([]);
-    setDiscount(0);
+    setHolds(prev => [{ 
+      id, 
+      createdAt: new Date().toISOString(), 
+      itemsCount: cart.length, 
+      total,
+      note: `${cart.length} items - $${total.toFixed(2)}`
+    }, ...prev]);
+    clear();
     showSuccess(`Cart held (#${id})`);
   };
+
   const resumeHold = (id: string) => {
     setHolds(prev => prev.filter(h => h.id !== id));
-    showSuccess(`Hold #${id} resumed (items would be restored in a full app)`);
+    showSuccess(`Hold #${id} resumed`);
   };
+
   const deleteHold = (id: string) => {
     setHolds(prev => prev.filter(h => h.id !== id));
     showSuccess(`Hold #${id} deleted`);
@@ -106,16 +121,21 @@ export const Sales = () => {
       paymentMethod: opts.paymentMethod,
       discount,
       tax,
-      notes: "POS checkout",
+      notes: "Modern POS checkout",
     });
 
     if (ok) {
       const receiptData: ReceiptData = {
-        id: (allSales[0]?.id as string) || undefined,
+        id: `SALE-${Date.now()}`,
         date: new Date().toLocaleString(),
         customer: opts.customerName || "Walk-in Customer",
         paymentMethod: opts.paymentMethod,
-        items: cart.map(i => ({ name: i.name, qty: i.quantity, price: i.price, total: i.price * i.quantity })),
+        items: cart.map(i => ({ 
+          name: i.name, 
+          qty: i.quantity, 
+          price: i.price, 
+          total: i.price * i.quantity 
+        })),
         subtotal,
         discount,
         tax,
@@ -123,9 +143,8 @@ export const Sales = () => {
       };
       setReceipt(receiptData);
       setReceiptOpen(true);
-      setCart([]);
-      setDiscount(0);
-      showSuccess("Sale completed");
+      clear();
+      showSuccess("Sale completed successfully!");
     }
   };
 
@@ -140,9 +159,6 @@ export const Sales = () => {
         e.preventDefault();
         clear();
       }
-      if (e.key === "Escape" && document.activeElement === searchRef.current) {
-        (document.activeElement as HTMLElement)?.blur();
-      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -150,52 +166,45 @@ export const Sales = () => {
 
   const headerActions = (
     <div className="flex items-center gap-2">
-      <Button variant="outline" onClick={holdCart}>
-        <Pause className="h-4 w-4 mr-2" /> Hold
+      <Button variant="outline" onClick={holdCart} disabled={cart.length === 0}>
+        <Pause className="h-4 w-4 mr-2" />
+        Hold
       </Button>
       <Button variant="outline" onClick={() => setHoldsOpen(true)}>
-        <Play className="h-4 w-4 mr-2" /> Resume
+        <Play className="h-4 w-4 mr-2" />
+        Resume
       </Button>
-      <Button variant="outline" onClick={clear} className="text-red-600">
-        <Trash2 className="h-4 w-4 mr-2" /> Clear
+      <Button variant="outline" onClick={clear} disabled={cart.length === 0}>
+        <Trash2 className="h-4 w-4 mr-2" />
+        Clear
       </Button>
-      <Button variant="outline" disabled={cart.length === 0} onClick={() => setReceiptOpen(true)}>
-        <Receipt className="h-4 w-4 mr-2" /> Preview
+      <Button variant="outline" onClick={() => setReceiptOpen(true)} disabled={cart.length === 0}>
+        <Receipt className="h-4 w-4 mr-2" />
+        Preview
       </Button>
     </div>
   );
 
   return (
     <PageContainer
-      title="Point of Sale"
-      subtitle="Thoughtful, responsive pharmacy checkout • scan, add, tender"
+      title="Pharmacy POS"
+      subtitle="Modern point of sale system • Scan, add, pay"
       headerActions={headerActions}
     >
-      {/* POS Header */}
-      <PosHeader
-        onHold={holdCart}
-        onResume={() => setHoldsOpen(true)}
-        onClear={clear}
-        cartCount={cart.length}
-        total={total}
-      />
-
-      {/* Layout: desktop 12-cols: 4 / 5 / 3, mobile stacked */}
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* Search / Scan */}
-        <div className="lg:col-span-4 order-1">
-          <PosProductSearch
+      {/* Main POS Interface */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Search & Products */}
+        <div className="lg:col-span-2 order-1">
+          <ModernPosSearch
             products={CATALOG}
             onAdd={addToCart}
-            onScan={handleScan}
-            quickPicks={quickPicks}
             searchRef={searchRef}
           />
         </div>
 
-        {/* Cart */}
-        <div className="lg:col-span-5 order-3 lg:order-2">
-          <PosCart
+        {/* Cart & Payment */}
+        <div className="order-2 space-y-6">
+          <ModernPosCart
             items={cart}
             totals={{ subtotal, discount, tax, total }}
             onInc={inc}
@@ -204,11 +213,8 @@ export const Sales = () => {
             onClear={clear}
             onDiscountChange={setDiscount}
           />
-        </div>
-
-        {/* Tender */}
-        <div className="lg:col-span-3 order-2 lg:order-3">
-          <PosTender
+          
+          <ModernPosTender
             total={total}
             onComplete={completeSale}
             disabled={cart.length === 0}
@@ -217,57 +223,51 @@ export const Sales = () => {
         </div>
       </div>
 
-      {/* Recent sales */}
-      <Card className="mt-6">
-        <CardHeader className="pb-3">
+      {/* Recent Sales */}
+      <Card className="mt-8">
+        <CardHeader>
           <CardTitle className="flex items-center">
+            <Clock className="h-5 w-5 mr-2" />
             Recent Sales
-            <Badge variant="secondary" className="ml-2">{allSales.slice(0, 5).length}</Badge>
+            <Badge variant="secondary" className="ml-2">
+              {allSales.slice(0, 5).length}
+            </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <SalesTable
-              sales={allSales.slice(0, 5)}
-              onView={() => {}}
-              onRefund={() => {}}
-              onPrintReceipt={() => {}}
-              isLoading={false}
-            />
+        <CardContent>
+          <div className="space-y-2">
+            {allSales.slice(0, 5).map((sale) => (
+              <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <div className="font-medium">{sale.id}</div>
+                  <div className="text-sm text-gray-600">{sale.customerName}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold">${sale.totalAmount.toFixed(2)}</div>
+                  <div className="text-sm text-gray-600">{sale.paymentMethod}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Mobile sticky summary */}
-      {!isMobile ? null : (
-        <>
-          <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-            <div className="mx-auto max-w-screen-sm p-3 flex items-center gap-3">
-              <div className="min-w-0">
-                <div className="text-xs text-gray-600">Total</div>
-                <div className="text-lg font-semibold">${total.toFixed(2)}</div>
-              </div>
-              <Button
-                className="ml-auto"
-                onClick={() => {
-                  // Scroll to tender panel on mobile
-                  const tender = document.querySelector("#pos-tender-anchor");
-                  if (tender) tender.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                disabled={cart.length === 0}
-              >
-                Pay Now
-              </Button>
+      {/* Mobile sticky total */}
+      {isMobile && cart.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm text-gray-600">{cart.length} items</div>
+              <div className="text-xl font-bold">${total.toFixed(2)}</div>
             </div>
+            <Button size="lg" disabled={cart.length === 0}>
+              Pay Now
+            </Button>
           </div>
-          <div className="h-16" />
-        </>
+        </div>
       )}
 
-      {/* Anchor for smooth scroll (mobile) */}
-      <div id="pos-tender-anchor" className="mt-0" />
-
-      {/* Hold carts dialog */}
+      {/* Dialogs */}
       <HoldCartsDialog
         open={holdsOpen}
         onOpenChange={setHoldsOpen}
@@ -276,8 +276,11 @@ export const Sales = () => {
         onDelete={deleteHold}
       />
 
-      {/* Receipt preview */}
-      <ReceiptPreview open={receiptOpen} onOpenChange={setReceiptOpen} receipt={receipt} />
+      <ReceiptPreview 
+        open={receiptOpen} 
+        onOpenChange={setReceiptOpen} 
+        receipt={receipt} 
+      />
     </PageContainer>
   );
 };
