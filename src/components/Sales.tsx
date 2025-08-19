@@ -12,28 +12,33 @@ import { Receipt, Pause, Play, Trash2, Clock } from "lucide-react";
 import { HoldCartsDialog, HoldCart } from "./sales/HoldCartsDialog";
 import { ReceiptPreview, ReceiptData } from "./sales/ReceiptPreview";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SafetyPanel, InteractionFinding } from "./sales/SafetyPanel";
+import { useCurrency } from "@/hooks/use-currency";
+
+type Unit = "pack" | "strip" | "tablet" | "bottle";
 
 export const Sales = () => {
   const { addSale, allSales, isLoading } = useSales();
   const isMobile = useIsMobile();
+  const { format } = useCurrency();
 
-  // Enhanced catalog with more realistic pharmacy data
-  const CATALOG: POSProduct[] = [
-    { id: "MED-001", name: "Paracetamol 500mg", price: 2.5, ndc: "98765-432-10", category: "Pain Relief", stock: 150 },
-    { id: "MED-002", name: "Amoxicillin 250mg", price: 8.75, ndc: "12345-678-90", category: "Antibiotics", stock: 75 },
-    { id: "MED-003", name: "Ibuprofen 400mg", price: 3.25, ndc: "11111-222-33", category: "Pain Relief", stock: 22 },
-    { id: "MED-004", name: "Vitamin D3 1000IU", price: 12, ndc: "55555-666-77", category: "Vitamins", stock: 60 },
-    { id: "MED-005", name: "Aspirin 75mg", price: 1.9, ndc: "22222-333-44", category: "Cardio", stock: 110 },
-    { id: "MED-006", name: "Omeprazole 20mg", price: 9.5, ndc: "33333-444-55", category: "Digestive", stock: 85 },
-    { id: "MED-007", name: "Cough Syrup 100ml", price: 8.75, ndc: "44444-555-66", category: "Cold & Flu", stock: 30 },
-    { id: "MED-008", name: "Lisinopril 10mg", price: 7.25, ndc: "66666-777-88", category: "Cardio", stock: 40 },
-    { id: "MED-009", name: "Metformin 500mg", price: 6.1, ndc: "77777-888-99", category: "Diabetes", stock: 55 },
-    { id: "MED-010", name: "Amlodipine 5mg", price: 5.8, ndc: "88888-999-00", category: "Cardio", stock: 50 },
-    { id: "MED-011", name: "Levothyroxine 50mcg", price: 10.2, ndc: "99999-000-11", category: "Endocrine", stock: 70 },
-    { id: "MED-012", name: "Simvastatin 20mg", price: 9.9, ndc: "12121-343-65", category: "Cardio", stock: 45 },
-    { id: "MED-013", name: "Insulin Pen", price: 45.0, ndc: "13131-454-76", category: "Diabetes", stock: 25 },
-    { id: "MED-014", name: "Albuterol Inhaler", price: 32.5, ndc: "14141-565-87", category: "Respiratory", stock: 18 },
-    { id: "MED-015", name: "Prednisone 10mg", price: 4.8, ndc: "15151-676-98", category: "Steroids", stock: 90 },
+  // Enhanced catalog with pharmacy-specific metadata
+  const CATALOG: (POSProduct & {
+    dosageForm: "tablet" | "capsule" | "syrup" | "inhaler" | "ointment";
+    basePackPrice: number;
+    stripsPerPack?: number;
+    tabletsPerStrip?: number;
+    sellableUnits: Unit[];
+    flags?: { withFood?: boolean; sedating?: boolean };
+  })[] = [
+    { id: "MED-001", name: "Paracetamol 500mg", price: 2.5, ndc: "98765-432-10", category: "Pain Relief", stock: 150, dosageForm: "tablet", basePackPrice: 25, stripsPerPack: 2, tabletsPerStrip: 10, sellableUnits: ["pack","strip","tablet"], flags: { withFood: false } },
+    { id: "MED-002", name: "Amoxicillin 250mg", price: 8.75, ndc: "12345-678-90", category: "Antibiotics", stock: 75, dosageForm: "capsule", basePackPrice: 35, stripsPerPack: 1, tabletsPerStrip: 21, sellableUnits: ["pack","strip","tablet"], flags: { withFood: true } },
+    { id: "MED-003", name: "Ibuprofen 400mg", price: 3.25, ndc: "11111-222-33", category: "Pain Relief", stock: 22, dosageForm: "tablet", basePackPrice: 32.5, stripsPerPack: 2, tabletsPerStrip: 10, sellableUnits: ["pack","strip","tablet"], flags: { withFood: true } },
+    { id: "MED-004", name: "Vitamin D3 1000IU", price: 12, ndc: "55555-666-77", category: "Vitamins", stock: 60, dosageForm: "tablet", basePackPrice: 24, stripsPerPack: 2, tabletsPerStrip: 10, sellableUnits: ["pack","strip","tablet"] },
+    { id: "MED-007", name: "Cough Syrup 100ml", price: 8.75, ndc: "44444-555-66", category: "Cold & Flu", stock: 30, dosageForm: "syrup", basePackPrice: 8.75, sellableUnits: ["bottle"], flags: { sedating: false } },
+    { id: "MED-013", name: "Insulin Pen", price: 45.0, ndc: "13131-454-76", category: "Diabetes", stock: 25, dosageForm: "inhaler", basePackPrice: 45.0, sellableUnits: ["pack"] },
+    { id: "MED-014", name: "Albuterol Inhaler", price: 32.5, ndc: "14141-565-87", category: "Respiratory", stock: 18, dosageForm: "inhaler", basePackPrice: 32.5, sellableUnits: ["pack"] },
+    { id: "MED-015", name: "Prednisone 10mg", price: 4.8, ndc: "15151-676-98", category: "Steroids", stock: 90, dosageForm: "tablet", basePackPrice: 24, stripsPerPack: 2, tabletsPerStrip: 10, sellableUnits: ["pack","strip","tablet"], flags: { withFood: true } },
   ];
 
   // POS state
@@ -44,27 +49,102 @@ export const Sales = () => {
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
 
+  // Safety/interactions
+  const [findings, setFindings] = useState<InteractionFinding[]>([]);
+  const [overridden, setOverridden] = useState(false);
+
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const getPriceForUnit = (productId: string, unit: Unit): number => {
+    const p = CATALOG.find(x => x.id === productId);
+    if (!p) return 0;
+    if (unit === "pack") return p.basePackPrice;
+    if (unit === "strip") {
+      const strips = p.stripsPerPack || 1;
+      return p.basePackPrice / strips;
+    }
+    if (unit === "tablet") {
+      const strips = p.stripsPerPack || 1;
+      const tabsPerStrip = p.tabletsPerStrip || 10;
+      return p.basePackPrice / (strips * tabsPerStrip);
+    }
+    // bottle or default fallbacks to base
+    return p.basePackPrice;
+  };
 
   // Totals
   const subtotal = useMemo(() => cart.reduce((s, it) => s + it.price * it.quantity, 0), [cart]);
   const tax = useMemo(() => Math.max(0, (subtotal - discount) * 0.08), [subtotal, discount]);
   const total = useMemo(() => Math.max(0, subtotal - discount + tax), [subtotal, discount, tax]);
 
+  // Interaction rules (minimal demonstrator)
+  const INTERACTIONS = [
+    { a: "Warfarin", b: "Aspirin", severity: "Major", message: "Increased bleeding risk. Avoid or monitor closely." },
+    { a: "Digoxin", b: "Amiodarone", severity: "Major", message: "Amiodarone increases digoxin levels. Monitor." },
+    { a: "Metformin", b: "Contrast", severity: "Moderate", message: "Hold metformin with iodinated contrast." },
+    { a: "Ibuprofen 400mg", b: "Prednisone 10mg", severity: "Moderate", message: "GI risk increases; take with food." },
+  ] as Array<{ a: string; b: string; severity: "Major" | "Moderate"; message: string }>;
+
+  const computeInteractions = (items: CartItem[]) => {
+    const out: InteractionFinding[] = [];
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const n1 = items[i].name;
+        const n2 = items[j].name;
+        const hit = INTERACTIONS.find(
+          (r) => (r.a === n1 && r.b === n2) || (r.a === n2 && r.b === n1)
+        );
+        if (hit) {
+          out.push({
+            id: `${i}-${j}`,
+            pair: `${n1} + ${n2}`,
+            severity: hit.severity === "Major" ? "Major" : "Moderate",
+            message: hit.message,
+          });
+        }
+      }
+    }
+    return out;
+  };
+
+  useEffect(() => {
+    const f = computeInteractions(cart);
+    setFindings(f);
+    if (f.length === 0) setOverridden(false);
+  }, [cart]);
+
   // Cart operations
   const addToCart = (product: POSProduct) => {
+    const meta = CATALOG.find(p => p.id === product.id);
+    if (!meta) return;
+
+    // default unit: pack (or bottle for liquids)
+    const defaultUnit: Unit = meta.sellableUnits.includes("pack") ? "pack" : (meta.sellableUnits[0] as Unit);
+    const unitPrice = getPriceForUnit(meta.id, defaultUnit);
+
     setCart(prev => {
-      const existing = prev.find(i => i.id === product.id);
+      const existing = prev.find(i => i.id === product.id && i.unit === defaultUnit);
       if (existing) {
-        return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map(i => i.id === product.id && i.unit === defaultUnit ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return [...prev, { 
-        id: product.id, 
-        name: product.name, 
-        price: product.price, 
-        ndc: product.ndc, 
-        quantity: 1 
-      }];
+      return [
+        ...prev,
+        {
+          id: meta.id,
+          name: meta.name,
+          price: unitPrice,
+          ndc: meta.ndc,
+          quantity: 1,
+          unit: defaultUnit,
+          sellableUnits: meta.sellableUnits,
+          unitMeta: {
+            dosageForm: meta.dosageForm,
+            stripsPerPack: meta.stripsPerPack,
+            tabletsPerStrip: meta.tabletsPerStrip,
+          },
+          flags: meta.flags,
+        },
+      ];
     });
     showSuccess(`Added ${product.name}`);
   };
@@ -75,6 +155,16 @@ export const Sales = () => {
   const clear = () => {
     setCart([]);
     setDiscount(0);
+    setOverridden(false);
+  };
+
+  const changeUnit = (id: string, unit: string) => {
+    const meta = CATALOG.find(p => p.id === id);
+    if (!meta) return;
+    const u = unit as Unit;
+    if (!meta.sellableUnits.includes(u)) return;
+    const price = getPriceForUnit(id, u);
+    setCart(prev => prev.map(i => i.id === id ? { ...i, unit: u, price } : i));
   };
 
   // Hold operations
@@ -86,7 +176,7 @@ export const Sales = () => {
       createdAt: new Date().toISOString(), 
       itemsCount: cart.length, 
       total,
-      note: `${cart.length} items - $${total.toFixed(2)}`
+      note: `${cart.length} items - ${format(total)}`
     }, ...prev]);
     clear();
     showSuccess(`Cart held (#${id})`);
@@ -105,6 +195,10 @@ export const Sales = () => {
   // Complete sale
   const completeSale = async (opts: { customerName: string; paymentMethod: string; amountReceived?: number }) => {
     if (cart.length === 0) return showError("Cart is empty");
+    const hasCritical = findings.some(f => f.severity === "Major" || f.severity === "Contraindicated");
+    if (hasCritical && !overridden) {
+      return showError("Critical interaction requires override before completing sale.");
+    }
 
     const items = cart.map(i => ({
       medicineId: i.id,
@@ -131,7 +225,7 @@ export const Sales = () => {
         customer: opts.customerName || "Walk-in Customer",
         paymentMethod: opts.paymentMethod,
         items: cart.map(i => ({ 
-          name: i.name, 
+          name: `${i.name}${i.unit ? ` (${i.unit})` : ""}`, 
           qty: i.quantity, 
           price: i.price, 
           total: i.price * i.quantity 
@@ -185,12 +279,25 @@ export const Sales = () => {
     </div>
   );
 
+  const hasCritical = findings.some(f => f.severity === "Major" || f.severity === "Contraindicated");
+
   return (
     <PageContainer
       title="Pharmacy POS"
       subtitle="Modern point of sale system • Scan, add, pay"
       headerActions={headerActions}
     >
+      {/* Safety Panel */}
+      <div className="mb-4">
+        <SafetyPanel
+          findings={findings}
+          onToggleCounseled={(id) => setFindings(prev => prev.map(f => f.id === id ? { ...f, counseled: !f.counseled } : f))}
+          hasCritical={hasCritical}
+          overridden={overridden}
+          onOverride={() => setOverridden(true)}
+        />
+      </div>
+
       {/* Main POS Interface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Search & Products */}
@@ -212,12 +319,13 @@ export const Sales = () => {
             onRemove={remove}
             onClear={clear}
             onDiscountChange={setDiscount}
+            onUnitChange={changeUnit}
           />
           
           <ModernPosTender
             total={total}
             onComplete={completeSale}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || (hasCritical && !overridden)}
             isLoading={isLoading}
           />
         </div>
@@ -243,7 +351,7 @@ export const Sales = () => {
                   <div className="text-sm text-gray-600">{sale.customerName}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold">${sale.totalAmount.toFixed(2)}</div>
+                  <div className="font-bold">{format(sale.totalAmount)}</div>
                   <div className="text-sm text-gray-600">{sale.paymentMethod}</div>
                 </div>
               </div>
@@ -258,9 +366,9 @@ export const Sales = () => {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-gray-600">{cart.length} items</div>
-              <div className="text-xl font-bold">${total.toFixed(2)}</div>
+              <div className="text-xl font-bold">{format(total)}</div>
             </div>
-            <Button size="lg" disabled={cart.length === 0}>
+            <Button size="lg" disabled={cart.length === 0 || (hasCritical && !overridden)}>
               Pay Now
             </Button>
           </div>
