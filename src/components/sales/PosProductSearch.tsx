@@ -20,9 +20,10 @@ interface PosProductSearchProps {
   onAdd: (product: POSProduct) => void;
   onScan: (code: string) => void;
   quickPicks?: POSProduct[];
+  searchRef?: React.RefObject<HTMLInputElement>;
 }
 
-export const PosProductSearch = ({ products, onAdd, onScan, quickPicks = [] }: PosProductSearchProps) => {
+export const PosProductSearch = ({ products, onAdd, onScan, quickPicks = [], searchRef }: PosProductSearchProps) => {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -38,21 +39,19 @@ export const PosProductSearch = ({ products, onAdd, onScan, quickPicks = [] }: P
   const categories = useMemo(() => {
     const set = new Set<string>();
     products.forEach(p => p.category && set.add(p.category));
-    return Array.from(set).slice(0, 6);
+    return Array.from(set).slice(0, 8);
   }, [products]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       const code = query.trim();
       if (!code) return;
-      // If NDC exact match, treat as scan
       const exact = products.find(p => p.ndc.toLowerCase() === code.toLowerCase());
       if (exact) {
         onScan(code);
         setQuery("");
         return;
       }
-      // Fallback: add first filtered result
       if (filtered.length > 0) {
         onAdd(filtered[0]);
         setQuery("");
@@ -72,13 +71,14 @@ export const PosProductSearch = ({ products, onAdd, onScan, quickPicks = [] }: P
         <CardContent className="space-y-3">
           <div className="flex gap-2">
             <Input
+              ref={searchRef}
               placeholder="Search by name, category, or NDC... (Press Enter to add)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               className="flex-1"
             />
-            <Button variant="outline" onClick={() => query && onScan(query)}>
+            <Button variant="outline" onClick={() => query && onScan(query)} className="shrink-0">
               <ScanLine className="h-4 w-4 mr-2" />
               Scan
             </Button>
@@ -89,7 +89,7 @@ export const PosProductSearch = ({ products, onAdd, onScan, quickPicks = [] }: P
                 <Badge
                   key={cat}
                   variant="outline"
-                  className="cursor-pointer"
+                  className="cursor-pointer px-3 py-1 rounded-full"
                   onClick={() => setQuery(cat)}
                 >
                   {cat}
@@ -106,7 +106,7 @@ export const PosProductSearch = ({ products, onAdd, onScan, quickPicks = [] }: P
             <CardTitle className="text-sm">Quick Picks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {quickPicks.map(p => (
                 <Button
                   key={p.id}

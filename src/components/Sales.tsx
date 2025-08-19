@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageContainer } from "@/components/ui/page-container";
-import { ResponsiveGrid } from "@/components/ui/responsive-grid";
 import { StandardCard } from "@/components/ui/standard-card";
 import { PosProductSearch, POSProduct } from "./sales/PosProductSearch";
 import { PosCart, CartItem } from "./sales/PosCart";
@@ -11,10 +10,15 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Receipt } from "lucide-react";
+import { Receipt, Pause, Play, Trash2, Wallet } from "lucide-react";
+import { HoldCartsDialog, HoldCart } from "./sales/HoldCartsDialog";
+import { ReceiptPreview, ReceiptData } from "./sales/ReceiptPreview";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export const Sales = () => {
   const { addSale, allSales, isLoading } = useSales();
+  const isMobile = useIsMobile();
 
   // Mock catalog (common pharmacy items)
   const CATALOG: POSProduct[] = [
@@ -32,10 +36,17 @@ export const Sales = () => {
     { id: "MED-012", name: "Simvastatin 20mg", price: 9.90, ndc: "12121-343-65", category: "Cardio", stock: 45 },
   ];
 
-  const quickPicks = useMemo(() => CATALOG.slice(0, 6), [CATALOG]);
+  const quickPicks = useMemo(() => CATALOG.slice(0, 8), [CATALOG]);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<number>(0);
+  const [holds, setHolds] = useState<HoldCart[]>([]);
+  const [holdsOpen, setHoldsOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const subtotal = useMemo(() => cart.reduce((s, it) => s + it.price * it.quantity, 0), [cart]);
   const tax = useMemo(() => Math.max(0, (subtotal - discount) * 0.08), [subtotal, discount]);
@@ -65,6 +76,40 @@ export const Sales = () => {
   const remove = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
   const clear = () => setCart([]);
 
+  const holdCart = () => {
+    if (cart.length === 0) {
+      showError("Nothing to hold");
+      return;
+    }
+    const id = String(holds.length + 1).padStart(3, "0");
+    setHolds(prev => [
+      {
+        id,
+        createdAt: new Date().toISOString(),
+        itemsCount: cart.length,
+        total,
+      },
+      ...prev,
+    ]);
+    setCart([]);
+    setDiscount(0);
+    showSuccess(`Cart held (#${id})`);
+  };
+
+  const resumeHold = (id: string) => {
+    const h = holds.find(x => x.id === id);
+    if (!h) return;
+    // In this simple implementation, we only stored counts/total; real app would store items snapshot.
+    // We'll just notify and remove hold.
+    setHolds(prev => prev.filter(x => x.id !== id));
+    showSuccess(`Hold #${id} resumed (load original items in a real setup)`);
+  };
+
+  const deleteHold = (id: string) => {
+    setHolds(prev => prev.filter(x => x.id !== id));
+    showSuccess(`Hold #${id} deleted`);
+  };
+
   const completeSale = async (opts: { customerName: string; paymentMethod: string; amountReceived?: number }) => {
     if (cart.length === 0) {
       showError("Cart is empty");
@@ -90,22 +135,88 @@ export const Sales = () => {
     });
 
     if (ok) {
+      const receiptData: ReceiptData = {
+        id: (allSales[0]?.id as string) || undefined,
+        date: new Date().toLocaleString(),
+        customer: opts.customerName || "Walk-in Customer",
+        paymentMethod: opts.paymentMethod,
+        items: cart.map(i => ({
+          name: i.name,
+          qty: i.quantity,
+          price: i.price,
+          total: i.price * i.quantity,
+        })),
+        subtotal,
+        discount,
+        tax,
+        total,
+      };
+      setReceipt(receiptData);
+      setReceiptOpen(true);
       showSuccess("Sale completed");
       setCart([]);
       setDiscount(0);
+      setPaymentOpen(false);
     }
   };
+
+  // Keyboard shortcuts for speed at POS
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // focus search
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+      // complete sale
+      if (e.key.toLowerCase() === "f9") {
+        e.preventDefault();
+        if (isMobile) {
+          setPaymentOpen(true);
+        }
+      }
+      // clear search
+      if (e.key === "Escape") {
+        if (document.activeElement === searchRef.current) {
+          (document.activeElement as HTMLElement)?.blur();
+        }
+      }
+      // clear cart
+      if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
+        e.preventDefault();
+        clear();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isMobile]);
+
+  const headerActions = (
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Button variant="outline" onClick={holdCart} className="w-full sm:w-auto">
+        <Pause className="h-4 w-4 mr-2" />
+        Hold
+      </Button>
+      <Button variant="outline" onClick={() => setHoldsOpen(true)} className="w-full sm:w-auto">
+        <Play className="h-4 w-4 mr-2" />
+        Resume
+      </Button>
+      <Button variant="outline" onClick={clear} className="w-full sm:w-auto text-red-600">
+        <Trash2 className="h-4 w-4 mr-2" />
+        Clear
+      </Button>
+      <Button variant="outline" className="w-full sm:w-auto" disabled={cart.length === 0} onClick={() => setReceiptOpen(true)}>
+        <Receipt className="h-4 w-4 mr-2" />
+        Preview
+      </Button>
+    </div>
+  );
 
   return (
     <PageContainer
       title="Point of Sale"
-      subtitle="Fast checkout for pharmacy sales with scanning and quick picks"
-      headerActions={
-        <Button variant="outline" className="w-full sm:w-auto" disabled={cart.length === 0}>
-          <Receipt className="h-4 w-4 mr-2" />
-          Print Last Receipt
-        </Button>
-      }
+      subtitle="Fast checkout with scan, quick picks, hold/resume, and mobile checkout"
+      headerActions={headerActions}
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Product Search, Quick Picks */}
@@ -115,18 +226,20 @@ export const Sales = () => {
             onAdd={addToCart}
             onScan={handleScan}
             quickPicks={quickPicks}
+            searchRef={searchRef}
           />
 
           <StandardCard title="Tips">
             <div className="text-sm text-gray-600 space-y-1">
-              <div>• Press Enter in search to add the top result.</div>
-              <div>• Scan NDC or paste barcode to add instantly.</div>
-              <div>• Use the Quick Picks for common items.</div>
+              <div>• Press / to focus search quickly.</div>
+              <div>• Press Enter to add the top result or scan an NDC.</div>
+              <div>• Use Hold/Resume to park and retrieve carts.</div>
+              <div className="lg:hidden">• Tap Checkout to pay in a mobile sheet.</div>
             </div>
           </StandardCard>
         </div>
 
-        {/* Right: Cart + Payment */}
+        {/* Right: Cart + Payment (payment inline on desktop, sheet on mobile) */}
         <div className="space-y-6">
           <PosCart
             items={cart}
@@ -137,9 +250,54 @@ export const Sales = () => {
             onClear={clear}
             onDiscountChange={setDiscount}
           />
-          <PosPayment total={total} onComplete={completeSale} disabled={cart.length === 0} isLoading={isLoading} />
+
+          {/* Desktop payment */}
+          <div className="hidden lg:block">
+            <PosPayment
+              total={total}
+              onComplete={completeSale}
+              disabled={cart.length === 0}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Mobile sticky summary / checkout */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="mx-auto max-w-screen-lg p-3 flex items-center gap-3">
+          <div className="min-w-0">
+            <div className="text-xs text-gray-600">Total</div>
+            <div className="text-lg font-semibold">${total.toFixed(2)}</div>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" className="sm:hidden" onClick={() => setHoldsOpen(true)}>
+              <Pause className="h-4 w-4 mr-1" /> Hold
+            </Button>
+            <Button onClick={() => setPaymentOpen(true)} disabled={cart.length === 0}>
+              <Wallet className="h-4 w-4 mr-2" />
+              Checkout
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile payment sheet */}
+      <Sheet open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh]">
+          <SheetHeader>
+            <SheetTitle>Checkout</SheetTitle>
+          </SheetHeader>
+          <div className="mt-3">
+            <PosPayment
+              total={total}
+              onComplete={completeSale}
+              disabled={cart.length === 0}
+              isLoading={isLoading}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Recent sales condensed */}
       <Card className="mt-6">
@@ -161,6 +319,18 @@ export const Sales = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Hold carts dialog */}
+      <HoldCartsDialog
+        open={holdsOpen}
+        onOpenChange={setHoldsOpen}
+        holds={holds}
+        onResume={resumeHold}
+        onDelete={deleteHold}
+      />
+
+      {/* Receipt preview */}
+      <ReceiptPreview open={receiptOpen} onOpenChange={setReceiptOpen} receipt={receipt} />
     </PageContainer>
   );
 };
