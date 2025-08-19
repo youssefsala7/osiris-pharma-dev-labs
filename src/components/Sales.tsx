@@ -1,32 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PageContainer } from "@/components/ui/page-container";
-import { StandardCard } from "@/components/ui/standard-card";
 import { PosProductSearch, POSProduct } from "./sales/PosProductSearch";
 import { PosCart, CartItem } from "./sales/PosCart";
-import { PosPayment } from "./sales/PosPayment";
+import { PosTender } from "./sales/PosTender";
 import { SalesTable } from "./sales/SalesTable";
 import { useSales } from "./sales/hooks/useSales";
 import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Receipt, Pause, Play, Trash2, Ellipsis } from "lucide-react";
+import { Receipt, Pause, Play, Trash2 } from "lucide-react";
 import { HoldCartsDialog, HoldCart } from "./sales/HoldCartsDialog";
 import { ReceiptPreview, ReceiptData } from "./sales/ReceiptPreview";
+import { PosHeader } from "./sales/PosHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Sales = () => {
   const { addSale, allSales, isLoading } = useSales();
   const isMobile = useIsMobile();
 
-  // Catalog
+  // Catalog (mock)
   const CATALOG: POSProduct[] = [
     { id: "MED-001", name: "Paracetamol 500mg", price: 2.5, ndc: "98765-432-10", category: "Pain Relief", stock: 150 },
     { id: "MED-002", name: "Amoxicillin 250mg", price: 8.75, ndc: "12345-678-90", category: "Antibiotics", stock: 75 },
@@ -50,7 +43,6 @@ export const Sales = () => {
   const [holdsOpen, setHoldsOpen] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"add" | "checkout">("add");
 
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -66,7 +58,6 @@ export const Sales = () => {
       if (existing) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [...prev, { id: product.id, name: product.name, price: product.price, ndc: product.ndc, quantity: 1 }];
     });
-    if (isMobile) setActiveTab("checkout");
   };
   const handleScan = (code: string) => {
     const prod = CATALOG.find(p => p.ndc.toLowerCase() === code.toLowerCase());
@@ -89,7 +80,7 @@ export const Sales = () => {
   };
   const resumeHold = (id: string) => {
     setHolds(prev => prev.filter(h => h.id !== id));
-    showSuccess(`Hold #${id} resumed (items would be restored in full app)`);
+    showSuccess(`Hold #${id} resumed (items would be restored in a full app)`);
   };
   const deleteHold = (id: string) => {
     setHolds(prev => prev.filter(h => h.id !== id));
@@ -99,6 +90,7 @@ export const Sales = () => {
   // Complete sale
   const completeSale = async (opts: { customerName: string; paymentMethod: string; amountReceived?: number }) => {
     if (cart.length === 0) return showError("Cart is empty");
+
     const items = cart.map(i => ({
       medicineId: i.id,
       medicineName: i.name,
@@ -107,6 +99,7 @@ export const Sales = () => {
       totalPrice: i.price * i.quantity,
       discount: 0,
     }));
+
     const ok = await addSale({
       customerName: opts.customerName || "Walk-in Customer",
       items,
@@ -115,6 +108,7 @@ export const Sales = () => {
       tax,
       notes: "POS checkout",
     });
+
     if (ok) {
       const receiptData: ReceiptData = {
         id: (allSales[0]?.id as string) || undefined,
@@ -132,7 +126,6 @@ export const Sales = () => {
       setCart([]);
       setDiscount(0);
       showSuccess("Sale completed");
-      if (isMobile) setActiveTab("add");
     }
   };
 
@@ -142,7 +135,6 @@ export const Sales = () => {
       if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         searchRef.current?.focus();
-        setActiveTab("add");
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
         e.preventDefault();
@@ -156,33 +148,8 @@ export const Sales = () => {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Mobile actions menu
-  const MobileActions = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="lg:hidden">
-          <Ellipsis className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem onClick={holdCart}>
-          <Pause className="h-4 w-4 mr-2" /> Hold
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setHoldsOpen(true)}>
-          <Play className="h-4 w-4 mr-2" /> Resume
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={clear}>
-          <Trash2 className="h-4 w-4 mr-2" /> Clear
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setReceiptOpen(true)} disabled={cart.length === 0}>
-          <Receipt className="h-4 w-4 mr-2" /> Preview
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
-  const DesktopActions = () => (
-    <div className="hidden lg:flex flex-col sm:flex-row gap-2">
+  const headerActions = (
+    <div className="flex items-center gap-2">
       <Button variant="outline" onClick={holdCart}>
         <Pause className="h-4 w-4 mr-2" /> Hold
       </Button>
@@ -198,81 +165,25 @@ export const Sales = () => {
     </div>
   );
 
-  const headerActions = (
-    <div className="flex items-center gap-2">
-      <MobileActions />
-      <DesktopActions />
-    </div>
-  );
-
   return (
     <PageContainer
       title="Point of Sale"
-      subtitle="Mobile-first pharmacy checkout with scan, quick picks, and streamlined payment"
+      subtitle="Thoughtful, responsive pharmacy checkout • scan, add, tender"
       headerActions={headerActions}
     >
-      {/* Mobile: Tabs layout */}
-      <div className="lg:hidden">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "add" | "checkout")} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="add">Add Items</TabsTrigger>
-            <TabsTrigger value="checkout">Checkout</TabsTrigger>
-          </TabsList>
+      {/* POS Header */}
+      <PosHeader
+        onHold={holdCart}
+        onResume={() => setHoldsOpen(true)}
+        onClear={clear}
+        cartCount={cart.length}
+        total={total}
+      />
 
-          <TabsContent value="add" className="space-y-4">
-            <PosProductSearch
-              products={CATALOG}
-              onAdd={addToCart}
-              onScan={handleScan}
-              quickPicks={quickPicks}
-              searchRef={searchRef}
-            />
-            <StandardCard title="Tips">
-              <div className="text-sm text-gray-600 space-y-1">
-                <div>• Press / to focus search quickly.</div>
-                <div>• Press Enter to add the top result or scan an NDC.</div>
-                <div>• Use Hold/Resume to park and retrieve carts.</div>
-              </div>
-            </StandardCard>
-          </TabsContent>
-
-          <TabsContent value="checkout" className="space-y-4">
-            <PosCart
-              items={cart}
-              totals={{ subtotal, discount, tax, total }}
-              onInc={inc}
-              onDec={dec}
-              onRemove={remove}
-              onClear={clear}
-              onDiscountChange={setDiscount}
-            />
-            <PosPayment
-              total={total}
-              onComplete={completeSale}
-              disabled={cart.length === 0}
-              isLoading={isLoading}
-            />
-          </TabsContent>
-        </Tabs>
-
-        {/* Sticky bottom summary */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-          <div className="mx-auto max-w-screen-sm p-3 flex items-center gap-3">
-            <div className="min-w-0">
-              <div className="text-xs text-gray-600">Total</div>
-              <div className="text-lg font-semibold">${total.toFixed(2)}</div>
-            </div>
-            <Button className="ml-auto" onClick={() => setActiveTab("checkout")} disabled={cart.length === 0}>
-              Proceed to Checkout
-            </Button>
-          </div>
-        </div>
-        <div className="h-16" />
-      </div>
-
-      {/* Desktop: Two-column layout */}
-      <div className="hidden lg:grid grid-cols-2 gap-6">
-        <div className="space-y-6">
+      {/* Layout: desktop 12-cols: 4 / 5 / 3, mobile stacked */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
+        {/* Search / Scan */}
+        <div className="lg:col-span-4 order-1">
           <PosProductSearch
             products={CATALOG}
             onAdd={addToCart}
@@ -280,16 +191,10 @@ export const Sales = () => {
             quickPicks={quickPicks}
             searchRef={searchRef}
           />
-          <StandardCard title="Tips">
-            <div className="text-sm text-gray-600 space-y-1">
-              <div>• Press / to focus search quickly.</div>
-              <div>• Press Enter to add the top result or scan an NDC.</div>
-              <div>• Use Hold/Resume to park and retrieve carts.</div>
-            </div>
-          </StandardCard>
         </div>
 
-        <div className="space-y-6">
+        {/* Cart */}
+        <div className="lg:col-span-5 order-3 lg:order-2">
           <PosCart
             items={cart}
             totals={{ subtotal, discount, tax, total }}
@@ -299,7 +204,11 @@ export const Sales = () => {
             onClear={clear}
             onDiscountChange={setDiscount}
           />
-          <PosPayment
+        </div>
+
+        {/* Tender */}
+        <div className="lg:col-span-3 order-2 lg:order-3">
+          <PosTender
             total={total}
             onComplete={completeSale}
             disabled={cart.length === 0}
@@ -328,6 +237,35 @@ export const Sales = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Mobile sticky summary */}
+      {!isMobile ? null : (
+        <>
+          <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+            <div className="mx-auto max-w-screen-sm p-3 flex items-center gap-3">
+              <div className="min-w-0">
+                <div className="text-xs text-gray-600">Total</div>
+                <div className="text-lg font-semibold">${total.toFixed(2)}</div>
+              </div>
+              <Button
+                className="ml-auto"
+                onClick={() => {
+                  // Scroll to tender panel on mobile
+                  const tender = document.querySelector("#pos-tender-anchor");
+                  if (tender) tender.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                disabled={cart.length === 0}
+              >
+                Pay Now
+              </Button>
+            </div>
+          </div>
+          <div className="h-16" />
+        </>
+      )}
+
+      {/* Anchor for smooth scroll (mobile) */}
+      <div id="pos-tender-anchor" className="mt-0" />
 
       {/* Hold carts dialog */}
       <HoldCartsDialog
