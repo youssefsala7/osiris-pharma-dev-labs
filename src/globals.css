@@ -120,6 +120,12 @@
     box-shadow: 0 0 0 2px rgba(67, 56, 202, 0.15);
     transition: border-color 150ms ease-out;
   }
+
+  /* Modal backdrop color override per brief (rgba(0,0,0,0.4)) */
+  /* Targets shadcn/radix overlay (fixed inset-0 bg-black/80) with higher specificity */
+  .fixed.inset-0.bg-black\/80 {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+  }
 }
 
 /* Utilities & components for the brief */
@@ -181,4 +187,8 @@
   /* Medicine card hover (POS) */
   .medicine-card { transition: border 200ms ease-out; }
   .medicine-card:hover { border: 2px solid rgba(67, 56, 202, 0.2); }
+
+  /* Action buttons subtle default opacity + hover */
+  .action-button { opacity: 0.6; transition: opacity 150ms ease-out; }
+  .action-button:hover { opacity: 1; }
 }
