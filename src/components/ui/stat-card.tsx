@@ -1,12 +1,11 @@
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown } from "lucide-react";
-import { AnimatedCounter } from "./animated-counter";
 import { cn } from "@/lib/utils";
+import { AnimatedCounter } from "./animated-counter";
 
 interface StatCardProps {
   title: string;
-  value: number;
+  value: number | string;
   icon: React.ReactNode;
   trend?: {
     value: number;
@@ -15,10 +14,10 @@ interface StatCardProps {
   prefix?: string;
   suffix?: string;
   className?: string;
-  isAnimated?: boolean;
+  animated?: boolean;
 }
 
-export const StatCard = ({
+export const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
   icon,
@@ -26,41 +25,33 @@ export const StatCard = ({
   prefix = "",
   suffix = "",
   className,
-  isAnimated = true
-}: StatCardProps) => {
+  animated = true
+}) => {
   return (
     <Card className={cn("hover:shadow-lg transition-all duration-300 hover:scale-105", className)}>
-      <CardContent className="p-4 sm:p-6">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900">
-              {isAnimated ? (
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {animated && typeof value === 'number' ? (
                 <AnimatedCounter value={value} prefix={prefix} suffix={suffix} />
               ) : (
-                `${prefix}${value.toLocaleString()}${suffix}`
+                `${prefix}${value}${suffix}`
               )}
             </p>
             {trend && (
-              <div className="flex items-center mt-1">
-                {trend.isPositive ? (
-                  <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                ) : (
-                  <TrendingDown className="h-4 w-4 text-red-600 mr-1" />
-                )}
-                <Badge 
-                  variant="secondary" 
-                  className={cn(
-                    "text-xs",
-                    trend.isPositive ? "text-green-600" : "text-red-600"
-                  )}
-                >
-                  {trend.isPositive ? '+' : ''}{trend.value}%
-                </Badge>
+              <div className="flex items-center mt-2">
+                <span className={cn(
+                  "text-sm font-medium",
+                  trend.isPositive ? "text-green-600" : "text-red-600"
+                )}>
+                  {trend.isPositive ? "+" : ""}{trend.value}%
+                </span>
               </div>
             )}
           </div>
-          <div className="flex-shrink-0">
+          <div className="ml-4">
             {icon}
           </div>
         </div>

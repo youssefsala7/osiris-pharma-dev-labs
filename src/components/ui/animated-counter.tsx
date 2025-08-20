@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface AnimatedCounterProps {
   value: number;
@@ -7,12 +7,12 @@ interface AnimatedCounterProps {
   suffix?: string;
 }
 
-export const AnimatedCounter = ({ 
-  value, 
-  duration = 1000, 
-  prefix = "", 
-  suffix = "" 
-}: AnimatedCounterProps) => {
+export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
+  value,
+  duration = 1000,
+  prefix = "",
+  suffix = ""
+}) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -24,14 +24,14 @@ export const AnimatedCounter = ({
       const progress = Math.min((timestamp - startTime) / duration, 1);
       
       setCount(Math.floor(progress * value));
-      
+
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate);
       }
     };
 
     animationFrame = requestAnimationFrame(animate);
-    
+
     return () => {
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
@@ -39,5 +39,9 @@ export const AnimatedCounter = ({
     };
   }, [value, duration]);
 
-  return <span>{prefix}{count.toLocaleString()}{suffix}</span>;
+  return (
+    <span>
+      {prefix}{count.toLocaleString()}{suffix}
+    </span>
+  );
 };
