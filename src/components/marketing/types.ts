@@ -1,48 +1,65 @@
-export type CampaignStatus = "Draft" | "Scheduled" | "Sent" | "Failed";
+export interface WhatsAppCredentials {
+  businessId: string;
+  accessToken: string;
+  phoneNumberId: string;
+  webhookToken: string;
+}
 
-export type EmailCampaign = {
+export interface EmailCampaign {
   id: string;
   name: string;
   subject: string;
   content: string;
   recipients: string[];
-  status: CampaignStatus;
-  createdAt: string;
+  status: "Draft" | "Scheduled" | "Sent" | "Failed";
+  scheduledAt?: string;
   sentAt?: string;
   openRate?: number;
   clickRate?: number;
-};
+  createdAt: string;
+}
 
-export type DeliveryStatus =
-  | "Label Created"
-  | "In Transit"
-  | "Out for Delivery"
-  | "Delivered"
-  | "Exception";
-
-export type DeliveryStep = {
-  time: string;
-  location: string;
-  status: DeliveryStatus;
-  notes?: string;
-};
-
-export type DeliveryOrder = {
+export interface DeliveryTracking {
   id: string;
-  customer: string;
-  carrier: "Emirates Post" | "Aramex" | "DHL" | "FedEx";
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
   trackingNumber: string;
-  status: DeliveryStatus;
-  lastUpdate: string;
-  steps: DeliveryStep[];
-  notifyVia: Array<"Email" | "WhatsApp" | "SMS">;
-};
+  carrier: string;
+  status: "Pending" | "Picked Up" | "In Transit" | "Out for Delivery" | "Delivered" | "Failed";
+  estimatedDelivery: string;
+  actualDelivery?: string;
+  location?: string;
+  notifications: {
+    whatsapp: boolean;
+    email: boolean;
+    sms: boolean;
+  };
+  updates: DeliveryUpdate[];
+}
 
-export type WhatsAppProvider = "Twilio" | "360Dialog" | "MetaCloud";
+export interface DeliveryUpdate {
+  id: string;
+  timestamp: string;
+  status: string;
+  location: string;
+  description: string;
+}
 
-export type WhatsAppConfig = {
-  provider: WhatsAppProvider;
-  phoneNumber: string;
-  apiKeyMasked: string; // masked preview for UI only
-  connected: boolean;
-};
+export interface WhatsAppTemplate {
+  id: string;
+  name: string;
+  category: "Marketing" | "Utility" | "Authentication";
+  language: string;
+  status: "Approved" | "Pending" | "Rejected";
+  content: string;
+  variables: string[];
+}
+
+export interface MarketingStats {
+  whatsappMessages: number;
+  emailsSent: number;
+  deliveriesTracked: number;
+  engagementRate: number;
+}

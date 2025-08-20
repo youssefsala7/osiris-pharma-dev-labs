@@ -25,9 +25,9 @@ import {
   Menu,
   X,
   Image as ImageIcon,
+  MessageCircle,
   Mail,
-  MessageSquare,
-  Megaphone,
+  Send,
 } from "lucide-react";
 import {
   Accordion,
@@ -52,7 +52,7 @@ type NavItem = {
   label: string;
   icon: any;
   notifications?: number;
-  badge?: string;
+  isNew?: boolean;
 };
 
 type NavGroup = {
@@ -85,6 +85,14 @@ const groups: NavGroup[] = [
     ],
   },
   {
+    id: "marketing",
+    label: "Marketing",
+    items: [
+      { id: "marketing", label: "Marketing Hub", icon: Send, isNew: true },
+    ],
+    defaultOpen: false,
+  },
+  {
     id: "finance",
     label: "Finance",
     items: [
@@ -92,17 +100,6 @@ const groups: NavGroup[] = [
       { id: "insurance-claims", label: "Insurance Claims", icon: CreditCard, notifications: 3 },
       { id: "reports", label: "Reports", icon: BarChart3 },
     ],
-  },
-  {
-    id: "marketing",
-    label: "Marketing",
-    items: [
-      { id: "marketing", label: "Marketing Hub", icon: Megaphone, badge: "NEW" },
-      { id: "marketing-email", label: "Email Campaigns", icon: Mail },
-      { id: "marketing-delivery", label: "Delivery Tracking", icon: Truck },
-      { id: "marketing-whatsapp", label: "WhatsApp Marketing", icon: MessageSquare, badge: "Beta" },
-    ],
-    defaultOpen: true,
   },
   {
     id: "compliance",
@@ -136,6 +133,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         setMobileOpen(false);
       }
     };
+
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -143,7 +141,9 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
 
   const handlePageChange = (page: string) => {
     onPageChange(page);
-    if (isMobile) setMobileOpen(false);
+    if (isMobile) {
+      setMobileOpen(false);
+    }
   };
 
   const NavButton = ({ item, index }: { item: NavItem; index: number }) => {
@@ -166,7 +166,12 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           {(!collapsed || isMobile) && (
             <>
               <span className="ml-3 flex-1 text-left">{item.label}</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center space-x-1">
+                {item.isNew && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 animate-pulse">
+                    NEW
+                  </Badge>
+                )}
                 {item.notifications && item.notifications > 0 && (
                   <Badge
                     variant="destructive"
@@ -175,14 +180,18 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
                     {item.notifications > 9 ? "9+" : item.notifications}
                   </Badge>
                 )}
-                {item.badge && (
-                  <Badge variant="secondary" className="text-[10px]">{item.badge}</Badge>
-                )}
               </div>
             </>
           )}
-          {collapsed && !isMobile && item.notifications && item.notifications > 0 && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+          {collapsed && !isMobile && (
+            <>
+              {item.notifications && item.notifications > 0 && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+              )}
+              {item.isNew && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+              )}
+            </>
           )}
         </div>
       </Button>
@@ -192,10 +201,16 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
       return (
         <Tooltip key={item.id}>
           <TooltipTrigger asChild>{buttonEl}</TooltipTrigger>
-          <TooltipContent side="right">{item.label}</TooltipContent>
+          <TooltipContent side="right">
+            <div className="flex items-center space-x-2">
+              <span>{item.label}</span>
+              {item.isNew && <Badge variant="secondary" className="text-xs">NEW</Badge>}
+            </div>
+          </TooltipContent>
         </Tooltip>
       );
     }
+
     return buttonEl;
   };
 
@@ -209,8 +224,10 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
 
   const sidebarContent = (
     <>
+      {/* Brand + controls */}
       <div className="p-4 border-b border-gray-200">
         <div className={cn("flex items-center justify-between", collapsed && !isMobile && "justify-center")}>
+          {/* Brand */}
           {!collapsed && (
             <div className="flex items-center space-x-2">
               {settings.logoUrl ? (
@@ -230,6 +247,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
               </div>
             </div>
           )}
+          {/* Collapse / Close */}
           {!isMobile ? (
             <Button
               variant="ghost"
@@ -248,6 +266,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         </div>
       </div>
 
+      {/* Pinned shortcuts */}
       <div className="p-3 border-b border-gray-200">
         <div className="flex gap-2">
           <Button
@@ -271,6 +290,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         </div>
       </div>
 
+      {/* Grouped navigation */}
       <ScrollArea className="flex-1 p-2">
         <Accordion
           type="multiple"
@@ -303,6 +323,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         </Accordion>
       </ScrollArea>
 
+      {/* User quick area */}
       <div
         className={cn(
           "p-4 border-t border-gray-200",
@@ -332,6 +353,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
   if (isMobile) {
     return (
       <>
+        {/* Mobile Menu Button */}
         <Button
           variant="ghost"
           size="sm"
@@ -341,15 +363,19 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         >
           <Menu size={20} />
         </Button>
+
+        {/* Mobile Overlay */}
         {mobileOpen && (
           <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-200"
             onClick={() => setMobileOpen(false)}
           />
         )}
+
+        {/* Mobile Sidebar */}
         <div
           className={cn(
-            "fixed left-0 top-0 h_full w-64 bg-white border-r border-gray-200 z-50 md:hidden transition-transform duration-300 ease-in-out",
+            "fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-50 md:hidden transition-transform duration-300 ease-in-out",
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >

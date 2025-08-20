@@ -1,108 +1,222 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { StandardCard } from "@/components/ui/standard-card";
-import { PageContainer } from "@/components/ui/page-container";
-import { ResponsiveGrid } from "@/components/ui/responsive-grid";
-import { StatCard } from "@/components/ui/stat-card";
+import { Textarea } from "@/components/ui/textarea";
+import { MessageCircle, Settings, Send, Users, TrendingUp, Clock, Zap } from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { MessageSquare, Lock, Send } from "lucide-react";
-import type { WhatsAppConfig } from "./types";
 
 export const WhatsAppMarketing = () => {
-  const [config, setConfig] = useState<WhatsAppConfig>({
-    provider: "Twilio",
-    phoneNumber: "",
-    apiKeyMasked: "••••••••••••••••",
-    connected: false,
-  });
+  const [isConfiguring, setIsConfiguring] = useState(false);
 
   return (
-    <PageContainer
-      title="WhatsApp Marketing"
-      subtitle="Engage customers on WhatsApp with campaigns, reminders, and delivery updates"
-      headerActions={
-        <Badge variant="secondary" className="animate-pulse">Coming soon</Badge>
-      }
-    >
-      <ResponsiveGrid cols={3}>
-        <StatCard title="Opted-in Contacts" value={0} icon={<MessageSquare className="h-8 w-8 text-green-600" />} />
-        <StatCard title="Campaigns (Beta)" value={0} icon={<Send className="h-8 w-8 text-blue-600" />} />
-        <StatCard title="Provider Status" value={config.connected ? "Connected" : "Disconnected"} icon={<Lock className="h-8 w-8 text-gray-600" />} animated={false} />
-      </ResponsiveGrid>
-
-      <FadeIn delay={100}>
-        <StandardCard title="Provider Configuration (Preview)">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label>Provider</Label>
-              <Select
-                value={config.provider}
-                onValueChange={(v) => setConfig({ ...config, provider: v as any })}
-                disabled
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Twilio">Twilio</SelectItem>
-                  <SelectItem value="360Dialog">360Dialog</SelectItem>
-                  <SelectItem value="MetaCloud">Meta Cloud (WA)</SelectItem>
-                </SelectContent>
-              </Select>
+    <div className="space-y-6">
+      {/* Coming Soon Banner */}
+      <FadeIn>
+        <Card className="border-2 border-dashed border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardContent className="p-8 text-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+              <MessageCircle className="h-16 w-16 text-blue-600 mx-auto mb-4 relative animate-bounce" />
             </div>
-            <div>
-              <Label>Business Phone Number</Label>
-              <Input value={config.phoneNumber} onChange={(e) => setConfig({ ...config, phoneNumber: e.target.value })} disabled placeholder="+971 50 000 0000" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">WhatsApp Business Integration</h2>
+            <p className="text-gray-600 mb-4">Connect with your customers through WhatsApp Business API</p>
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <Badge variant="secondary" className="animate-pulse">
+                <Clock className="h-3 w-3 mr-1" />
+                Coming Soon
+              </Badge>
+              <Badge variant="outline">
+                <Zap className="h-3 w-3 mr-1" />
+                Beta Access Available
+              </Badge>
             </div>
-            <div>
-              <Label>API Key</Label>
-              <Input value={config.apiKeyMasked} disabled />
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Button disabled>Connect</Button>
-            <Button variant="outline" disabled>Test Message</Button>
-          </div>
-          <p className="text-xs text-gray-500 mt-3">
-            Credentials are managed securely on the server (hidden in this preview). This feature will be enabled after provider approval.
-          </p>
-        </StandardCard>
-      </FadeIn>
-
-      <FadeIn delay={200}>
-        <StandardCard title="Templates Preview">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">Refill Reminder</CardTitle></CardHeader>
-              <CardContent className="text-sm whitespace-pre-wrap">
-                Hi {{`{{customer_name}`}}}, your prescription for {{`{{medicine_name}`}} is ready for refill at {{`{{pharmacy_name}`}}. Reply YES to confirm.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">Order Ready for Pickup</CardTitle></CardHeader>
-              <CardContent className="text-sm whitespace-pre-wrap">
-                Hello {{`{{customer_name}`}}}, your order is ready for pickup at {{`{{pharmacy_name}`}}. Show this code at the counter: {{`{{order_code}`}}}
-              </CardContent>
-            </Card>
-          </div>
-        </StandardCard>
-      </FadeIn>
-
-      <FadeIn delay={300}>
-        <Card className="border-dashed border-2">
-          <CardContent className="p-6 text-center">
-            <div className="text-2xl">🚧</div>
-            <div className="font-medium mt-2">Automations, Broadcasts, and Opt‑in tools arriving soon</div>
-            <div className="text-sm text-gray-600">We’re finishing compliance and provider onboarding flows.</div>
+            <Button 
+              onClick={() => setIsConfiguring(!isConfiguring)}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configure WhatsApp Business
+            </Button>
           </CardContent>
         </Card>
       </FadeIn>
-    </PageContainer>
+
+      {/* Preview Stats */}
+      <FadeIn delay={200}>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Messages Sent</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    <AnimatedCounter value={0} suffix=" (Preview)" />
+                  </p>
+                </div>
+                <MessageCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active Contacts</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    <AnimatedCounter value={0} suffix=" (Preview)" />
+                  </p>
+                </div>
+                <Users className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Response Rate</p>
+                  <p className="text-2xl font-bold text-gray-900">0% (Preview)</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Templates</p>
+                  <p className="text-2xl font-bold text-gray-900">0 (Preview)</p>
+                </div>
+                <Send className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </FadeIn>
+
+      {/* Configuration Panel */}
+      {isConfiguring && (
+        <FadeIn delay={300}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Settings className="h-5 w-5 mr-2" />
+                WhatsApp Business API Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <Clock className="h-5 w-5 text-yellow-600 mr-2" />
+                  <div>
+                    <h4 className="font-medium text-yellow-800">Beta Feature</h4>
+                    <p className="text-sm text-yellow-700">
+                      WhatsApp Business API integration is currently in development. 
+                      Configure your settings now to be ready when it launches.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="businessId">Business Account ID</Label>
+                  <Input
+                    id="businessId"
+                    placeholder="Enter your WhatsApp Business Account ID"
+                    disabled
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phoneNumber">Phone Number ID</Label>
+                  <Input
+                    id="phoneNumber"
+                    placeholder="Enter your Phone Number ID"
+                    disabled
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="accessToken">Access Token</Label>
+                <Input
+                  id="accessToken"
+                  type="password"
+                  placeholder="Enter your WhatsApp Business API Access Token"
+                  disabled
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="webhookToken">Webhook Verification Token</Label>
+                <Input
+                  id="webhookToken"
+                  placeholder="Enter your webhook verification token"
+                  disabled
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="welcomeMessage">Welcome Message Template</Label>
+                <Textarea
+                  id="welcomeMessage"
+                  placeholder="Hello {{customer_name}}, welcome to {{pharmacy_name}}! We're here to help with all your healthcare needs."
+                  rows={3}
+                  disabled
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div className="text-sm text-gray-600">
+                  Configuration will be saved for when the feature launches
+                </div>
+                <Button disabled>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Save Configuration
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      )}
+
+      {/* Feature Preview */}
+      <FadeIn delay={400}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Features</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <MessageCircle className="h-8 w-8 text-green-600 mb-2" />
+                <h4 className="font-medium mb-1">Automated Messages</h4>
+                <p className="text-sm text-gray-600">Send order confirmations, delivery updates, and reminders automatically.</p>
+              </div>
+              
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <Users className="h-8 w-8 text-blue-600 mb-2" />
+                <h4 className="font-medium mb-1">Customer Segmentation</h4>
+                <p className="text-sm text-gray-600">Target specific customer groups with personalized messages.</p>
+              </div>
+              
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <TrendingUp className="h-8 w-8 text-purple-600 mb-2" />
+                <h4 className="font-medium mb-1">Analytics Dashboard</h4>
+                <p className="text-sm text-gray-600">Track message delivery, read rates, and customer engagement.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </FadeIn>
+    </div>
   );
 };
-
-export default WhatsAppMarketing;

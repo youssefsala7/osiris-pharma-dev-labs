@@ -1,41 +1,34 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface StandardCardProps {
   title?: string;
+  headerAction?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  contentClassName?: string;
-  headerAction?: React.ReactNode;
-  variant?: "default" | "compact" | "tall";
+  variant?: "default" | "compact";
 }
 
-export const StandardCard: React.FC<StandardCardProps> = ({
+export const StandardCard = ({
   title,
+  headerAction,
   children,
   className,
-  contentClassName,
-  headerAction,
   variant = "default"
-}) => {
-  const variantClasses = {
-    default: "min-h-[200px]",
-    compact: "min-h-[120px]",
-    tall: "min-h-[300px]"
-  };
-
+}: StandardCardProps) => {
   return (
-    <Card className={cn("hover:shadow-lg transition-all duration-300", variantClasses[variant], className)}>
+    <Card className={cn("hover:shadow-lg transition-shadow duration-200", className)}>
       {title && (
-        <CardHeader className="pb-3">
+        <CardHeader className={cn(variant === "compact" && "pb-3")}>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+            <CardTitle className={cn(variant === "compact" ? "text-lg" : "text-xl")}>
+              {title}
+            </CardTitle>
             {headerAction}
           </div>
         </CardHeader>
       )}
-      <CardContent className={cn("p-6", contentClassName)}>
+      <CardContent className={cn(variant === "compact" && "pt-0")}>
         {children}
       </CardContent>
     </Card>
