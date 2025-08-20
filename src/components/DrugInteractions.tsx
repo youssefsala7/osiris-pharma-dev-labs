@@ -87,7 +87,7 @@ export const DrugInteractions = () => {
       id: "CHK-001",
       patientName: "John Doe",
       medications: ["Warfarin", "Aspirin", "Metoprolol"],
-      interactions: [interactions[0]],
+      interactions: [ { ...interactions[0] } ],
       checkDate: "2024-01-15",
       pharmacistNotes: "Patient counseled about bleeding risk. Advised to monitor for signs of bleeding."
     }
@@ -106,26 +106,21 @@ export const DrugInteractions = () => {
 
   const checkInteractions = (medications: string[]) => {
     const foundInteractions: DrugInteraction[] = [];
-    
     for (let i = 0; i < medications.length; i++) {
       for (let j = i + 1; j < medications.length; j++) {
         const interaction = interactions.find(int => 
           (int.drug1 === medications[i] && int.drug2 === medications[j]) ||
           (int.drug1 === medications[j] && int.drug2 === medications[i])
         );
-        if (interaction) {
-          foundInteractions.push(interaction);
-        }
+        if (interaction) foundInteractions.push(interaction);
       }
     }
-    
     return foundInteractions;
   };
 
   const handleCheckInteractions = () => {
     if (newCheck.patientName && newCheck.medications && newCheck.medications.length >= 2) {
       const foundInteractions = checkInteractions(newCheck.medications);
-      
       const check: InteractionCheck = {
         id: `CHK-${String(interactionChecks.length + 1).padStart(3, '0')}`,
         patientName: newCheck.patientName,
@@ -134,11 +129,9 @@ export const DrugInteractions = () => {
         checkDate: new Date().toISOString().split('T')[0],
         pharmacistNotes: newCheck.pharmacistNotes || ""
       };
-      
       setInteractionChecks([check, ...interactionChecks]);
       setNewCheck({ medications: [] });
       setIsCheckDialogOpen(false);
-      
       if (foundInteractions.length > 0) {
         showError(`Found ${foundInteractions.length} drug interaction(s)!`);
       } else {
@@ -147,23 +140,16 @@ export const DrugInteractions = () => {
     }
   };
 
-  const getSeverityColor = (severity: string) => {
+  const severityClass = (severity: string) => {
     switch (severity) {
-      case "Contraindicated": return "destructive";
-      case "Major": return "destructive";
-      case "Moderate": return "secondary";
-      case "Minor": return "outline";
-      default: return "outline";
-    }
-  };
-
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case "Contraindicated": return <X className="h-4 w-4" />;
-      case "Major": return <AlertTriangle className="h-4 w-4" />;
-      case "Moderate": return <Shield className="h-4 w-4" />;
-      case "Minor": return <Info className="h-4 w-4" />;
-      default: return <Info className="h-4 w-4" />;
+      case "Contraindicated":
+      case "Major":
+        return "status-major";
+      case "Moderate":
+        return "status-moderate";
+      case "Minor":
+      default:
+        return "status-neutral";
     }
   };
 
@@ -182,8 +168,8 @@ export const DrugInteractions = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Drug Interactions</h1>
-          <p className="text-gray-600">Check for drug interactions and manage interaction database</p>
+          <h1 className="text-3xl font-semibold">Drug Interactions</h1>
+          <p className="opacity-70">Check for drug interactions and manage interaction database</p>
         </div>
         
         <Dialog open={isCheckDialogOpen} onOpenChange={setIsCheckDialogOpen}>
@@ -256,48 +242,48 @@ export const DrugInteractions = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
+        <Card className="shadow-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Interactions</p>
-                <p className="text-2xl font-bold text-gray-900">{totalInteractions}</p>
+                <p className="text-sm opacity-70">Total Interactions</p>
+                <p className="text-2xl font-semibold">{totalInteractions}</p>
               </div>
               <Shield className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Major/Critical</p>
-                <p className="text-2xl font-bold text-gray-900">{majorInteractions}</p>
+                <p className="text-sm opacity-70">Major/Critical</p>
+                <p className="text-2xl font-semibold">{majorInteractions}</p>
               </div>
               <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Recent Checks</p>
-                <p className="text-2xl font-bold text-gray-900">{recentChecks}</p>
+                <p className="text-sm opacity-70">Recent Checks</p>
+                <p className="text-2xl font-semibold">{recentChecks}</p>
               </div>
               <Search className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Interactions Found</p>
-                <p className="text-2xl font-bold text-gray-900">{interactionsFound}</p>
+                <p className="text-sm opacity-70">Interactions Found</p>
+                <p className="text-2xl font-semibold">{interactionsFound}</p>
               </div>
               <Info className="h-8 w-8 text-orange-600" />
             </div>
@@ -305,51 +291,8 @@ export const DrugInteractions = () => {
         </Card>
       </div>
 
-      {/* Recent Interaction Checks */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Interaction Checks</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {interactionChecks.slice(0, 5).map((check) => (
-              <div key={check.id} className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h3 className="font-medium">{check.patientName}</h3>
-                    <p className="text-sm text-gray-600">{check.checkDate}</p>
-                  </div>
-                  <Badge variant={check.interactions.length > 0 ? "destructive" : "default"}>
-                    {check.interactions.length} interaction(s)
-                  </Badge>
-                </div>
-                <div className="text-sm">
-                  <p><strong>Medications:</strong> {check.medications.join(", ")}</p>
-                  {check.interactions.length > 0 && (
-                    <div className="mt-2">
-                      <p><strong>Interactions Found:</strong></p>
-                      {check.interactions.map((interaction, idx) => (
-                        <div key={idx} className="ml-4 mt-1">
-                          <Badge variant={getSeverityColor(interaction.severity) as any} className="mr-2">
-                            {interaction.severity}
-                          </Badge>
-                          {interaction.drug1} + {interaction.drug2}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {check.pharmacistNotes && (
-                    <p className="mt-2"><strong>Notes:</strong> {check.pharmacistNotes}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Search */}
-      <Card>
+      <Card className="shadow-card">
         <CardContent className="p-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -364,7 +307,7 @@ export const DrugInteractions = () => {
       </Card>
 
       {/* Interactions Database */}
-      <Card>
+      <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Shield className="h-5 w-5 mr-2" />
@@ -387,8 +330,7 @@ export const DrugInteractions = () => {
                 <TableRow key={interaction.id}>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      {getSeverityIcon(interaction.severity)}
-                      <Badge variant={getSeverityColor(interaction.severity) as any}>
+                      <Badge className={severityClass(interaction.severity)}>
                         {interaction.severity}
                       </Badge>
                     </div>
@@ -396,17 +338,17 @@ export const DrugInteractions = () => {
                   <TableCell>
                     <div>
                       <p className="font-medium">{interaction.drug1}</p>
-                      <p className="text-sm text-gray-600">+ {interaction.drug2}</p>
+                      <p className="text-sm opacity-70">+ {interaction.drug2}</p>
                     </div>
                   </TableCell>
                   <TableCell className="max-w-xs">
-                    <p className="text-sm">{interaction.description}</p>
+                    <p className="text-sm opacity-90">{interaction.description}</p>
                   </TableCell>
                   <TableCell className="max-w-xs">
-                    <p className="text-sm">{interaction.clinicalEffects}</p>
+                    <p className="text-sm opacity-90">{interaction.clinicalEffects}</p>
                   </TableCell>
                   <TableCell className="max-w-xs">
-                    <p className="text-sm">{interaction.management}</p>
+                    <p className="text-sm opacity-90">{interaction.management}</p>
                   </TableCell>
                 </TableRow>
               ))}

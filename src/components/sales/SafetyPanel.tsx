@@ -20,6 +20,12 @@ interface SafetyPanelProps {
   onOverride: () => void;
 }
 
+const severityClass = (s: InteractionSeverity): string => {
+  if (s === "Contraindicated" || s === "Major") return "status-major";
+  if (s === "Moderate") return "status-moderate";
+  return "status-neutral";
+};
+
 export const SafetyPanel = ({
   findings,
   onToggleCounseled,
@@ -29,8 +35,8 @@ export const SafetyPanel = ({
 }: SafetyPanelProps) => {
   if (findings.length === 0) {
     return (
-      <div className="p-3 border rounded-lg bg-green-50 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-green-700">
+      <div className="p-3 border rounded-lg bg-[rgba(16,185,129,0.1)] border-[rgba(16,185,129,0.2)] text-[#10B981] flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <CheckCircle className="h-4 w-4" />
           <span className="text-sm font-medium">No interactions detected</span>
         </div>
@@ -38,14 +44,8 @@ export const SafetyPanel = ({
     );
   }
 
-  const severityVariant = (s: InteractionSeverity): "destructive" | "secondary" | "outline" => {
-    if (s === "Contraindicated" || s === "Major") return "destructive";
-    if (s === "Moderate") return "secondary";
-    return "outline";
-  };
-
   return (
-    <div className={`p-3 border rounded-lg ${hasCritical && !overridden ? "bg-red-50 border-red-200" : "bg-orange-50 border-orange-200"}`}>
+    <div className={`p-3 border rounded-lg ${hasCritical && !overridden ? "bg-red-50 border-red-200 critical-pulse" : "bg-orange-50 border-orange-200"}`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           {hasCritical && !overridden ? (
@@ -71,10 +71,10 @@ export const SafetyPanel = ({
           <div key={f.id} className="flex items-start justify-between rounded-md bg-white p-2 border">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <Badge variant={severityVariant(f.severity)} className="capitalize">{f.severity}</Badge>
+                <Badge className={severityClass(f.severity) + " capitalize"}>{f.severity}</Badge>
                 <span className="font-medium text-sm truncate">{f.pair}</span>
               </div>
-              <div className="text-xs text-gray-600 mt-1">{f.message}</div>
+              <div className="text-xs opacity-90 mt-1">{f.message}</div>
             </div>
             <Button
               size="sm"

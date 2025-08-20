@@ -146,7 +146,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
     }
   };
 
-  const NavButton = ({ item, index }: { item: NavItem; index: number }) => {
+  const NavButton = ({ item, index }: { item: any; index: number }) => {
     const Icon = item.icon;
     const isActive = currentPage === item.id;
     const buttonEl = (
@@ -227,7 +227,6 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
       {/* Brand + controls */}
       <div className="p-4 border-b border-gray-200">
         <div className={cn("flex items-center justify-between", collapsed && !isMobile && "justify-center")}>
-          {/* Brand */}
           {!collapsed && (
             <div className="flex items-center space-x-2">
               {settings.logoUrl ? (
@@ -247,7 +246,6 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
               </div>
             </div>
           )}
-          {/* Collapse / Close */}
           {!isMobile ? (
             <Button
               variant="ghost"
@@ -358,7 +356,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           variant="ghost"
           size="sm"
           onClick={() => setMobileOpen(true)}
-          className="fixed top-4 left-4 z-50 md:hidden bg-white shadow-lg"
+          className="fixed top-4 left-4 z-50 md:hidden bg-white shadow-sidebar"
           aria-label="Open menu"
         >
           <Menu size={20} />
@@ -367,7 +365,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         {/* Mobile Overlay */}
         {mobileOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-200"
+            className="fixed inset-0 bg-black/40 z-40 md:hidden transition-opacity duration-200"
             onClick={() => setMobileOpen(false)}
           />
         )}
@@ -375,7 +373,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         {/* Mobile Sidebar */}
         <div
           className={cn(
-            "fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-50 md:hidden transition-transform duration-300 ease-in-out",
+            "fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-50 md:hidden transition-transform duration-300 ease-in-out shadow-sidebar",
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
@@ -388,7 +386,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
   return (
     <div
       className={cn(
-        "bg-white border-r border-gray-200 transition-all duration-300 ease-in-out hidden md:flex flex-col",
+        "bg-white border-r border-gray-200 transition-all duration-300 ease-in-out hidden md:flex flex-col shadow-sidebar",
         collapsed ? "w-16" : "w-64"
       )}
     >

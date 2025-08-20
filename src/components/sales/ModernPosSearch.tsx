@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -96,7 +96,11 @@ export const ModernPosSearch = ({ products, onAdd, searchRef }: ModernPosSearchP
       {/* Product Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {filtered.map(product => (
-          <Card key={product.id} className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => handleAdd(product)}>
+          <Card
+            key={product.id}
+            className="hover:shadow-md transition-shadow cursor-pointer group medicine-card"
+            onClick={() => handleAdd(product)}
+          >
             <CardContent className="p-3">
               <div className="aspect-square bg-gray-100 rounded-lg mb-2 flex items-center justify-center">
                 <div className="text-2xl">💊</div>
@@ -104,13 +108,13 @@ export const ModernPosSearch = ({ products, onAdd, searchRef }: ModernPosSearchP
               <div className="space-y-1">
                 <h4 className="font-medium text-sm leading-tight">{product.name}</h4>
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-green-600">${product.price}</span>
+                  <span className="text-lg font-semibold text-green-600">${product.price}</span>
                   <Button size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                {product.stock && (
-                  <Badge variant={product.stock < 10 ? "destructive" : "secondary"} className="text-xs">
+                {typeof product.stock === "number" && (
+                  <Badge className={product.stock < 10 ? "low-stock" : "status-neutral text-xs"}>
                     {product.stock} left
                   </Badge>
                 )}

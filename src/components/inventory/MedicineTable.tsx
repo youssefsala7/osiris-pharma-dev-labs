@@ -30,16 +30,16 @@ export const MedicineTable = ({
 }: MedicineTableProps) => {
   const getStockStatus = (stock: number, minStock: number) => {
     if (stock <= minStock) {
-      return <Badge variant="destructive" className="animate-pulse">Low Stock</Badge>;
+      return <Badge className="low-stock">Low Stock</Badge>;
     } else if (stock <= minStock * 1.5) {
-      return <Badge variant="secondary">Medium</Badge>;
+      return <Badge className="status-moderate">Medium</Badge>;
     }
-    return <Badge variant="default">In Stock</Badge>;
+    return <Badge className="status-success">In Stock</Badge>;
   };
 
   return (
     <FadeIn delay={300}>
-      <Card>
+      <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center text-lg sm:text-xl">
             <Package className="h-5 w-5 mr-2" />
@@ -68,14 +68,14 @@ export const MedicineTable = ({
                     <TableCell>
                       <div>
                         <p className="font-medium">{medicine.name}</p>
-                        <p className="text-sm text-gray-600">{medicine.supplier}</p>
+                        <p className="text-sm opacity-70">{medicine.supplier}</p>
                       </div>
                     </TableCell>
                     <TableCell>{medicine.category}</TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{medicine.stock}</p>
-                        <p className="text-sm text-gray-600">Min: {medicine.minStock}</p>
+                        <p className="text-sm opacity-70">Min: {medicine.minStock}</p>
                       </div>
                     </TableCell>
                     <TableCell>{getStockStatus(medicine.stock, medicine.minStock)}</TableCell>
@@ -87,7 +87,7 @@ export const MedicineTable = ({
                           variant="outline" 
                           size="sm"
                           onClick={() => onView(medicine)}
-                          className="w-full sm:w-auto"
+                          className="w-full sm:w-auto action-button"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -95,7 +95,7 @@ export const MedicineTable = ({
                           variant="outline" 
                           size="sm"
                           onClick={() => onEdit(medicine)}
-                          className="w-full sm:w-auto"
+                          className="w-full sm:w-auto action-button"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -104,7 +104,7 @@ export const MedicineTable = ({
                           size="sm"
                           onClick={() => onDelete(medicine.id)}
                           disabled={isLoading}
-                          className="w-full sm:w-auto text-red-600 hover:text-red-700"
+                          className="w-full sm:w-auto text-red-600 hover:text-red-700 action-button"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
