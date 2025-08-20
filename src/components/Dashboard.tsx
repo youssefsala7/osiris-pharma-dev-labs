@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Package,
   Users,
@@ -12,6 +12,8 @@ import {
   Download,
   Calendar,
   Search as SearchIcon,
+  ListFilter,
+  Eye,
 } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { PageContainer } from "@/components/ui/page-container";
@@ -22,10 +24,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useDashboard } from "./dashboard/hooks/useDashboard";
 import { QuickSaleDialog } from "./dashboard/QuickSaleDialog";
 import { PrescriptionDialog } from "./dashboard/PrescriptionDialog";
 import { useCurrency } from "@/hooks/use-currency";
+import { TrendSparkline } from "./dashboard/TrendSparkline";
 
 export const Dashboard = () => {
   const {
@@ -44,30 +49,89 @@ export const Dashboard = () => {
   const [isQuickSaleOpen, setIsQuickSaleOpen] = useState(false);
   const [isNewPrescriptionOpen, setIsNewPrescriptionOpen] = useState(false);
 
-  // New tidy header controls
+  // Header controls
   const [dateRange, setDateRange] = useState("30d");
   const [search, setSearch] = useState("");
 
-  const { symbol } = useCurrency();
+  // View-all modals
+  const [openLowStock, setOpenLowStock] = useState(false);
+  const [openOrders, setOpenOrders] = useState(false);
+
+  const { symbol, format } = useCurrency();
+
+  // Derived filters applied across sections
+  const filteredLowStock = useMemo(
+    () => lowStockItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase())),
+    [lowStockItems, search]
+  );
+
+  const filteredRecentSales = useMemo(
+    () => recentSales.filter(s =>
+      s.id.toLowerCase().includes(search.toLowerCase()) || s.customer.toLowerCase().includes(search.toLowerCase())
+    ),
+    [recentSales, search]
+  );
+
+  const filteredPendingOrders = useMemo(
+    () => pendingOrders.filter(p =>
+      p.id.toLowerCase().includes(search.toLowerCase()) || p.supplier.toLowerCase().includes(search.toLowerCase())
+    ),
+    [pendingOrders, search]
+  );
+
+  const filteredExpiring = useMemo(
+    () => expiringMedicines.filter(m => m.name.toLowerCase().includes(search.toLowerCase())),
+    [expiringMedicines, search]
+  );
+
+  const filteredInteractions = useMemo(
+    () => drugInteractionAlerts.filter(a =>
+      a.patient.toLowerCase().includes(search.toLowerCase()) || a.drugs.toLowerCase().includes(search.toLowerCase())
+    ),
+    [drugInteractionAlerts, search]
+  );
+
+  const filteredClaims = useMemo(
+    () => insuranceClaims.filter(c =>
+      c.id.toLowerCase().includes(search.toLowerCase()) || c.patient.toLowerCase().includes(search.toLowerCase())
+    ),
+    [insuranceClaims, search]
+  );
 
   const exportSummary = () => {
-    // lightweight simulated export for now
+    const rows = [
+      ["Section", "Primary", "Secondary", "Tertiary"],
+      ...filteredLowStock.map(i => ["Low Stock", i.name, String(i.stock), `Min ${i.minStock}`]),
+      ...filteredPendingOrders.map(o => ["Order", o.id, o.supplier, o.status]),
+      ...filteredRecentSales.map(s => ["Recent Sale", s.id, s.customer, s.amount]),
+    ];
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dashboard-summary.csv";
+    a.click();
     showSuccess("Dashboard summary exported.");
   };
+
+  // Simple sparkline demo data (monotone trend)
+  const todaySalesTrend = useMemo(() => [12, 18, 9, 22, 19, 28, 24, 31, 29, 34], []);
+  const monthlyRevenueTrend = useMemo(() => [32, 36, 34, 38, 41, 40, 44, 47, 46, 52], []);
 
   const headerActions = (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
       <div className="relative max-w-xs w-full">
         <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
-          placeholder="Search..."
+          placeholder="Search across dashboard..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9 h-9"
         />
       </div>
       <Select value={dateRange} onValueChange={setDateRange}>
-        <SelectTrigger className="h-9 w-[140px]">
+        <SelectTrigger className="h-9 w-[160px]">
           <Calendar className="h-4 w-4 mr-2" />
           <SelectValue placeholder="Date range" />
         </SelectTrigger>
@@ -100,7 +164,7 @@ export const Dashboard = () => {
       subtitle="Welcome back! Here's what's happening at your pharmacy."
       headerActions={headerActions}
     >
-      {/* Stats Cards */}
+      {/* Stats Cards with Sparklines */}
       <ResponsiveGrid cols={4}>
         <StatCard
           title="Total Medicines"
@@ -120,6 +184,7 @@ export const Dashboard = () => {
           icon={<ShoppingCart className="h-8 w-8 text-purple-600" />}
           prefix={`${symbol} `}
           trend={{ value: 15, isPositive: true }}
+          extra={<TrendSparkline data={todaySalesTrend} color="#7C3AED" />}
         />
         <StatCard
           title="Monthly Revenue"
@@ -127,6 +192,7 @@ export const Dashboard = () => {
           icon={<DollarSign className="h-8 w-8 text-orange-600" />}
           prefix={`${symbol} `}
           trend={{ value: 23, isPositive: true }}
+          extra={<TrendSparkline data={monthlyRevenueTrend} color="#EA580C" />}
         />
       </ResponsiveGrid>
 
@@ -134,10 +200,17 @@ export const Dashboard = () => {
       <ResponsiveGrid cols={3}>
         <StandardCard
           title="Low Stock Alert"
-          headerAction={<Badge variant="destructive">{lowStockItems.length}</Badge>}
+          headerAction={
+            <div className="flex items-center gap-2">
+              <Badge variant="destructive">{filteredLowStock.length}</Badge>
+              <Button size="sm" variant="outline" onClick={() => setOpenLowStock(true)}>
+                <Eye className="h-4 w-4 mr-1" /> View all
+              </Button>
+            </div>
+          }
         >
           <div className="space-y-3">
-            {lowStockItems.slice(0, 4).map((item) => (
+            {filteredLowStock.slice(0, 4).map((item) => (
               <div
                 key={item.id}
                 className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
@@ -151,15 +224,18 @@ export const Dashboard = () => {
                 </Badge>
               </div>
             ))}
+            {filteredLowStock.length === 0 && (
+              <div className="text-sm text-gray-500">No matches for current search.</div>
+            )}
           </div>
         </StandardCard>
 
         <StandardCard
           title="Drug Interaction Alerts"
-          headerAction={<Badge variant="secondary">{drugInteractionAlerts.length}</Badge>}
+          headerAction={<Badge variant="secondary">{filteredInteractions.length}</Badge>}
         >
           <div className="space-y-3">
-            {drugInteractionAlerts.slice(0, 4).map((alert, index) => (
+            {filteredInteractions.slice(0, 4).map((alert, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200"
@@ -171,15 +247,18 @@ export const Dashboard = () => {
                 <Badge variant="destructive">{alert.severity}</Badge>
               </div>
             ))}
+            {filteredInteractions.length === 0 && (
+              <div className="text-sm text-gray-500">No alerts found.</div>
+            )}
           </div>
         </StandardCard>
 
         <StandardCard
           title="Recent Sales"
-          headerAction={<Badge variant="default">{recentSales.length}</Badge>}
+          headerAction={<Badge variant="default">{filteredRecentSales.length}</Badge>}
         >
           <div className="space-y-3">
-            {recentSales.slice(0, 4).map((sale) => (
+            {filteredRecentSales.slice(0, 4).map((sale) => (
               <div
                 key={sale.id}
                 className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200"
@@ -194,6 +273,9 @@ export const Dashboard = () => {
                 </div>
               </div>
             ))}
+            {filteredRecentSales.length === 0 && (
+              <div className="text-sm text-gray-500">No recent sales match your search.</div>
+            )}
           </div>
         </StandardCard>
       </ResponsiveGrid>
@@ -202,10 +284,17 @@ export const Dashboard = () => {
       <ResponsiveGrid cols={3}>
         <StandardCard
           title="Pending Purchase Orders"
-          headerAction={<Badge variant="secondary">{pendingOrders.length}</Badge>}
+          headerAction={
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{filteredPendingOrders.length}</Badge>
+              <Button size="sm" variant="outline" onClick={() => setOpenOrders(true)}>
+                <Eye className="h-4 w-4 mr-1" /> View all
+              </Button>
+            </div>
+          }
         >
           <div className="space-y-3">
-            {pendingOrders.slice(0, 4).map((order) => (
+            {filteredPendingOrders.slice(0, 4).map((order) => (
               <div
                 key={order.id}
                 className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
@@ -220,15 +309,18 @@ export const Dashboard = () => {
                 </div>
               </div>
             ))}
+            {filteredPendingOrders.length === 0 && (
+              <div className="text-sm text-gray-500">No orders found.</div>
+            )}
           </div>
         </StandardCard>
 
         <StandardCard
           title="Insurance Claims"
-          headerAction={<Badge variant="secondary">{insuranceClaims.length}</Badge>}
+          headerAction={<Badge variant="secondary">{filteredClaims.length}</Badge>}
         >
           <div className="space-y-3">
-            {insuranceClaims.slice(0, 4).map((claim) => (
+            {filteredClaims.slice(0, 4).map((claim) => (
               <div
                 key={claim.id}
                 className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-200"
@@ -253,15 +345,18 @@ export const Dashboard = () => {
                 </div>
               </div>
             ))}
+            {filteredClaims.length === 0 && (
+              <div className="text-sm text-gray-500">No matching claims.</div>
+            )}
           </div>
         </StandardCard>
 
         <StandardCard
           title="Expiring Soon"
-          headerAction={<Badge variant="secondary">{expiringMedicines.length}</Badge>}
+          headerAction={<Badge variant="secondary">{filteredExpiring.length}</Badge>}
         >
           <div className="space-y-3">
-            {expiringMedicines.slice(0, 4).map((medicine, index) => (
+            {filteredExpiring.slice(0, 4).map((medicine, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200"
@@ -273,12 +368,15 @@ export const Dashboard = () => {
                 <Badge variant="secondary">{medicine.daysLeft} days</Badge>
               </div>
             ))}
+            {filteredExpiring.length === 0 && (
+              <div className="text-sm text-gray-500">No medicines expiring soon match your search.</div>
+            )}
           </div>
         </StandardCard>
       </ResponsiveGrid>
 
       {/* Quick Actions */}
-      <StandardCard title="Quick Actions" variant="compact">
+      <StandardCard title="Quick Actions" variant="compact" headerAction={<ListFilter className="h-4 w-4 text-gray-500" />}>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Button
             variant="outline"
@@ -326,6 +424,82 @@ export const Dashboard = () => {
           </Button>
         </div>
       </StandardCard>
+
+      {/* Dialog: Low Stock Full List */}
+      <Dialog open={openLowStock} onOpenChange={setOpenLowStock}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Low Stock Items</DialogTitle>
+          </DialogHeader>
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Medicine</TableHead>
+                  <TableHead className="w-24 text-right">Stock</TableHead>
+                  <TableHead className="w-24 text-right">Min</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLowStock.map(i => (
+                  <TableRow key={i.id}>
+                    <TableCell className="font-medium">{i.name}</TableCell>
+                    <TableCell className="text-right">{i.stock}</TableCell>
+                    <TableCell className="text-right">{i.minStock}</TableCell>
+                  </TableRow>
+                ))}
+                {filteredLowStock.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-sm text-gray-500">
+                      No items match the current search.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Pending Orders Full List */}
+      <Dialog open={openOrders} onOpenChange={setOpenOrders}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Pending Purchase Orders</DialogTitle>
+          </DialogHeader>
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-28 text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPendingOrders.map(o => (
+                  <TableRow key={o.id}>
+                    <TableCell className="font-medium">{o.id}</TableCell>
+                    <TableCell>{o.supplier}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{o.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{o.amount}</TableCell>
+                  </TableRow>
+                ))}
+                {filteredPendingOrders.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-sm text-gray-500">
+                      No orders match the current search.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialogs */}
       <QuickSaleDialog
