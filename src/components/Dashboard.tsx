@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Package,
   Users,
@@ -36,6 +36,8 @@ import { PrescriptionDialog } from "./dashboard/PrescriptionDialog";
 import { useCurrency } from "@/hooks/use-currency";
 import { TrendSparkline } from "./dashboard/TrendSparkline";
 import { useAppSettings } from "@/providers/AppSettingsProvider";
+import { Switch } from "@/components/ui/switch";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export const Dashboard = () => {
   const {
@@ -57,6 +59,10 @@ export const Dashboard = () => {
   // Header controls
   const [dateRange, setDateRange] = useState("30d");
   const [search, setSearch] = useState("");
+
+  // Auto-refresh state
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
   // View-all modals
   const [openLowStock, setOpenLowStock] = useState(false);
@@ -121,6 +127,28 @@ export const Dashboard = () => {
     [insuranceClaims]
   );
 
+  // Revenue overview dataset (simple mock; could be wired to API)
+  const revenueSeries = useMemo(() => {
+    const base = [
+      { date: "Mon", revenue: 1450, orders: 41 },
+      { date: "Tue", revenue: 1720, orders: 49 },
+      { date: "Wed", revenue: 1560, orders: 44 },
+      { date: "Thu", revenue: 1980, orders: 58 },
+      { date: "Fri", revenue: 2120, orders: 62 },
+      { date: "Sat", revenue: 1860, orders: 54 },
+      { date: "Sun", revenue: 1740, orders: 50 },
+    ];
+    return base;
+  }, []);
+
+  const topMedicines = useMemo(() => [
+    { name: "Paracetamol 500mg", sales: 1250, revenue: 1125.0 },
+    { name: "Amoxicillin 250mg", sales: 890, revenue: 2800.0 },
+    { name: "Ibuprofen 400mg", sales: 756, revenue: 910.0 },
+    { name: "Vitamin D3 1000IU", sales: 623, revenue: 745.0 },
+    { name: "Aspirin 75mg", sales: 595, revenue: 487.5 },
+  ], []);
+
   const exportSummary = () => {
     const rows = [
       ["Section", "Primary", "Secondary", "Tertiary"],
@@ -139,46 +167,74 @@ export const Dashboard = () => {
     showSuccess("Dashboard summary exported.");
   };
 
-  // Simple sparkline demo data
+  // Sparklines (small KPI trends)
   const todaySalesTrend = useMemo(() => [12, 18, 9, 22, 19, 28, 24, 31, 29, 34], []);
   const monthlyRevenueTrend = useMemo(() => [32, 36, 34, 38, 41, 40, 44, 47, 46, 52], []);
 
+  // Header action handlers
+  const doRefresh = () => {
+    // In a real app, trigger data refetch here.
+    setLastRefreshed(new Date());
+    showSuccess("Dashboard refreshed");
+  };
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(() => {
+      setLastRefreshed(new Date());
+    }, 60_000); // refresh indicator every minute
+    return () => clearInterval(id);
+  }, [autoRefresh]);
+
   const headerActions = (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-      <div className="relative max-w-xs w-full">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search across dashboard..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 h-9"
-        />
+    <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full">
+      <div className="flex-1 flex items-stretch gap-2">
+        <div className="relative max-w-xs w-full">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search across dashboard..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        <Select value={dateRange} onValueChange={setDateRange}>
+          <SelectTrigger className="h-9 w-[160px]">
+            <Calendar className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Date range" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="today">Today</SelectItem>
+            <SelectItem value="7d">Last 7 days</SelectItem>
+            <SelectItem value="30d">Last 30 days</SelectItem>
+            <SelectItem value="quarter">This Quarter</SelectItem>
+            <SelectItem value="year">This Year</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      <Select value={dateRange} onValueChange={setDateRange}>
-        <SelectTrigger className="h-9 w-[160px]">
-          <Calendar className="h-4 w-4 mr-2" />
-          <SelectValue placeholder="Date range" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="today">Today</SelectItem>
-          <SelectItem value="7d">Last 7 days</SelectItem>
-          <SelectItem value="30d">Last 30 days</SelectItem>
-          <SelectItem value="quarter">This Quarter</SelectItem>
-          <SelectItem value="year">This Year</SelectItem>
-        </SelectContent>
-      </Select>
-      <Button variant="outline" onClick={exportSummary} className="h-9">
-        <Download className="h-4 w-4 mr-2" />
-        Export
-      </Button>
-      <Button onClick={() => setIsQuickSaleOpen(true)} className="h-9">
-        <ShoppingCart className="h-4 w-4 mr-2" />
-        Quick Sale
-      </Button>
-      <Button variant="outline" onClick={() => setIsNewPrescriptionOpen(true)} className="h-9">
-        <FileText className="h-4 w-4 mr-2" />
-        New Prescription
-      </Button>
+
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-2 py-1 rounded-md border bg-white">
+          <span className="text-xs text-gray-600">Auto-refresh</span>
+          <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+        </div>
+        <Button variant="outline" onClick={doRefresh} className="h-9">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+        <Button variant="outline" onClick={exportSummary} className="h-9">
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
+        <Button onClick={() => setIsQuickSaleOpen(true)} className="h-9">
+          <ShoppingCart className="h-4 w-4 mr-2" />
+          Quick Sale
+        </Button>
+        <Button variant="outline" onClick={() => setIsNewPrescriptionOpen(true)} className="h-9">
+          <FileText className="h-4 w-4 mr-2" />
+          New Rx
+        </Button>
+      </div>
     </div>
   );
 
@@ -188,6 +244,11 @@ export const Dashboard = () => {
       subtitle="Welcome back! Here's what's happening at your pharmacy."
       headerActions={headerActions}
     >
+      {/* Subtle loading ribbon */}
+      {isLoading && (
+        <div className="w-full h-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-500 animate-pulse rounded-full mb-3" />
+      )}
+
       {/* Meta Bar */}
       <StandardCard variant="compact">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -206,9 +267,11 @@ export const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            <span>Last synced {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          <div className="flex items-center gap-3 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <RefreshCw className={`h-4 w-4 ${autoRefresh ? "animate-spin" : ""}`} />
+              <span>Last refreshed {lastRefreshed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+            </div>
           </div>
         </div>
       </StandardCard>
@@ -490,6 +553,63 @@ export const Dashboard = () => {
             {filteredExpiring.length === 0 && (
               <div className="text-sm text-gray-500">No medicines expiring soon match your search.</div>
             )}
+          </div>
+        </StandardCard>
+      </ResponsiveGrid>
+
+      {/* Insights Row: Revenue Overview + Top Medicines */}
+      <ResponsiveGrid cols={3}>
+        <StandardCard title="Revenue Overview" className="lg:col-span-2">
+          <div className="w-full h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueSeries} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip
+                  formatter={(v: any, name: any) => [name === "revenue" ? format(Number(v)) : v, name]}
+                  contentStyle={{ fontSize: 12 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  fill="url(#revFill)"
+                  dot={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 text-sm text-gray-600">
+            Showing last 7 days. Date range: {dateRange.toUpperCase()}
+          </div>
+        </StandardCard>
+
+        <StandardCard title="Top Medicines">
+          <div className="space-y-3">
+            {topMedicines.map((p, idx) => (
+              <div key={p.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-semibold">
+                    {idx + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm truncate">{p.name}</div>
+                    <div className="text-xs text-gray-600">{p.sales} units</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold">{format(p.revenue)}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </StandardCard>
       </ResponsiveGrid>
