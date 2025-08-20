@@ -14,6 +14,10 @@ import {
   Search as SearchIcon,
   ListFilter,
   Eye,
+  Building2,
+  MapPin,
+  RefreshCw,
+  Filter,
 } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { PageContainer } from "@/components/ui/page-container";
@@ -31,6 +35,7 @@ import { QuickSaleDialog } from "./dashboard/QuickSaleDialog";
 import { PrescriptionDialog } from "./dashboard/PrescriptionDialog";
 import { useCurrency } from "@/hooks/use-currency";
 import { TrendSparkline } from "./dashboard/TrendSparkline";
+import { useAppSettings } from "@/providers/AppSettingsProvider";
 
 export const Dashboard = () => {
   const {
@@ -56,14 +61,20 @@ export const Dashboard = () => {
   // View-all modals
   const [openLowStock, setOpenLowStock] = useState(false);
   const [openOrders, setOpenOrders] = useState(false);
+  const [openClaims, setOpenClaims] = useState(false);
+
+  // Quick filter toggles
+  const [onlyCriticalStock, setOnlyCriticalStock] = useState(false);
+  const [onlyMajorInteractions, setOnlyMajorInteractions] = useState(false);
 
   const { symbol, format } = useCurrency();
+  const { settings } = useAppSettings();
 
   // Derived filters applied across sections
-  const filteredLowStock = useMemo(
-    () => lowStockItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase())),
-    [lowStockItems, search]
-  );
+  const filteredLowStock = useMemo(() => {
+    const base = lowStockItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+    return onlyCriticalStock ? base.filter(i => i.severity === "critical") : base;
+  }, [lowStockItems, search, onlyCriticalStock]);
 
   const filteredRecentSales = useMemo(
     () => recentSales.filter(s =>
@@ -84,12 +95,12 @@ export const Dashboard = () => {
     [expiringMedicines, search]
   );
 
-  const filteredInteractions = useMemo(
-    () => drugInteractionAlerts.filter(a =>
+  const filteredInteractions = useMemo(() => {
+    const base = drugInteractionAlerts.filter(a =>
       a.patient.toLowerCase().includes(search.toLowerCase()) || a.drugs.toLowerCase().includes(search.toLowerCase())
-    ),
-    [drugInteractionAlerts, search]
-  );
+    );
+    return onlyMajorInteractions ? base.filter(a => a.severity === "Major") : base;
+  }, [drugInteractionAlerts, search, onlyMajorInteractions]);
 
   const filteredClaims = useMemo(
     () => insuranceClaims.filter(c =>
@@ -98,12 +109,25 @@ export const Dashboard = () => {
     [insuranceClaims, search]
   );
 
+  // Snapshot metrics
+  const criticalLowStock = useMemo(() => lowStockItems.filter(i => i.severity === "critical").length, [lowStockItems]);
+  const pendingOrderCount = useMemo(
+    () => pendingOrders.filter(po => ["Sent", "Confirmed"].includes(po.status)).length,
+    [pendingOrders]
+  );
+  const majorAlerts = useMemo(() => drugInteractionAlerts.filter(a => a.severity === "Major").length, [drugInteractionAlerts]);
+  const claimsUnderReview = useMemo(
+    () => insuranceClaims.filter(c => c.status === "Under Review").length,
+    [insuranceClaims]
+  );
+
   const exportSummary = () => {
     const rows = [
       ["Section", "Primary", "Secondary", "Tertiary"],
       ...filteredLowStock.map(i => ["Low Stock", i.name, String(i.stock), `Min ${i.minStock}`]),
       ...filteredPendingOrders.map(o => ["Order", o.id, o.supplier, o.status]),
       ...filteredRecentSales.map(s => ["Recent Sale", s.id, s.customer, s.amount]),
+      ...filteredClaims.map(c => ["Claim", c.id, c.patient, c.status]),
     ];
     const csv = rows.map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -115,7 +139,7 @@ export const Dashboard = () => {
     showSuccess("Dashboard summary exported.");
   };
 
-  // Simple sparkline demo data (monotone trend)
+  // Simple sparkline demo data
   const todaySalesTrend = useMemo(() => [12, 18, 9, 22, 19, 28, 24, 31, 29, 34], []);
   const monthlyRevenueTrend = useMemo(() => [32, 36, 34, 38, 41, 40, 44, 47, 46, 52], []);
 
@@ -164,7 +188,32 @@ export const Dashboard = () => {
       subtitle="Welcome back! Here's what's happening at your pharmacy."
       headerActions={headerActions}
     >
-      {/* Stats Cards with Sparklines */}
+      {/* Meta Bar */}
+      <StandardCard variant="compact">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Pharmacy</div>
+              <div className="font-semibold">
+                {settings.pharmacyName || "Al Kindi Pharmacy"}
+                <span className="text-sm text-gray-500 ml-2 flex items-center">
+                  <MapPin className="h-3.5 w-3.5 mr-1" />
+                  {settings.location || "Sharjah"}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <span>Last synced {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          </div>
+        </div>
+      </StandardCard>
+
+      {/* KPI Row with Sparklines */}
       <ResponsiveGrid cols={4}>
         <StatCard
           title="Total Medicines"
@@ -196,7 +245,71 @@ export const Dashboard = () => {
         />
       </ResponsiveGrid>
 
-      {/* Alerts & Activity */}
+      {/* Quick Filters */}
+      <StandardCard variant="compact" title="Quick Filters" headerAction={<Filter className="h-4 w-4 text-gray-500" />}>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={onlyCriticalStock ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOnlyCriticalStock(v => !v)}
+          >
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Critical Low Stock
+          </Button>
+          <Button
+            variant={onlyMajorInteractions ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOnlyMajorInteractions(v => !v)}
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            Major Interaction Alerts
+          </Button>
+        </div>
+      </StandardCard>
+
+      {/* Operational Snapshot */}
+      <StandardCard title="Operational Snapshot" variant="compact">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="p-4 border rounded-lg bg-red-50/60 border-red-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-red-700">Critical Low Stock</div>
+                <div className="text-xl font-bold text-red-800">{criticalLowStock}</div>
+              </div>
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+          </div>
+          <div className="p-4 border rounded-lg bg-blue-50/60 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-blue-700">Pending Orders</div>
+                <div className="text-xl font-bold text-blue-800">{pendingOrderCount}</div>
+              </div>
+              <FileText className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+          <div className="p-4 border rounded-lg bg-orange-50/60 border-orange-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-orange-700">Major Alerts</div>
+                <div className="text-xl font-bold text-orange-800">{majorAlerts}</div>
+              </div>
+              <Shield className="h-6 w-6 text-orange-600" />
+            </div>
+          </div>
+          <div className="p-4 border rounded-lg bg-indigo-50/60 border-indigo-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-indigo-700">Claims Under Review</div>
+                <div className="text-xl font-bold text-indigo-800">{claimsUnderReview}</div>
+              </div>
+              <CreditCard className="h-6 w-6 text-indigo-600" />
+            </div>
+          </div>
+        </div>
+      </StandardCard>
+
+      {/* Alerts & Activity (Left) + Orders & Claims (Right) */}
       <ResponsiveGrid cols={3}>
         <StandardCard
           title="Low Stock Alert"
@@ -225,7 +338,7 @@ export const Dashboard = () => {
               </div>
             ))}
             {filteredLowStock.length === 0 && (
-              <div className="text-sm text-gray-500">No matches for current search.</div>
+              <div className="text-sm text-gray-500">No matches for current filters.</div>
             )}
           </div>
         </StandardCard>
@@ -248,7 +361,7 @@ export const Dashboard = () => {
               </div>
             ))}
             {filteredInteractions.length === 0 && (
-              <div className="text-sm text-gray-500">No alerts found.</div>
+              <div className="text-sm text-gray-500">No alerts found for current filters.</div>
             )}
           </div>
         </StandardCard>
@@ -280,7 +393,6 @@ export const Dashboard = () => {
         </StandardCard>
       </ResponsiveGrid>
 
-      {/* Orders & Claims */}
       <ResponsiveGrid cols={3}>
         <StandardCard
           title="Pending Purchase Orders"
@@ -317,7 +429,14 @@ export const Dashboard = () => {
 
         <StandardCard
           title="Insurance Claims"
-          headerAction={<Badge variant="secondary">{filteredClaims.length}</Badge>}
+          headerAction={
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{filteredClaims.length}</Badge>
+              <Button size="sm" variant="outline" onClick={() => setOpenClaims(true)}>
+                <Eye className="h-4 w-4 mr-1" /> View all
+              </Button>
+            </div>
+          }
         >
           <div className="space-y-3">
             {filteredClaims.slice(0, 4).map((claim) => (
@@ -375,56 +494,6 @@ export const Dashboard = () => {
         </StandardCard>
       </ResponsiveGrid>
 
-      {/* Quick Actions */}
-      <StandardCard title="Quick Actions" variant="compact" headerAction={<ListFilter className="h-4 w-4 text-gray-500" />}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center hover:bg-blue-50 hover:border-blue-200"
-          >
-            <Package className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">Add Medicine</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center hover:bg-green-50 hover:border-green-200"
-          >
-            <Users className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">New Customer</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center hover:bg-purple-50 hover:border-purple-200"
-            onClick={() => setIsNewPrescriptionOpen(true)}
-          >
-            <FileText className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">New Prescription</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center hover:bg-orange-50 hover:border-orange-200"
-          >
-            <Shield className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">Check Interactions</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center hover:bg-indigo-50 hover:border-indigo-200"
-          >
-            <CreditCard className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">Submit Claim</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center hover:bg-pink-50 hover:border-pink-200"
-            onClick={() => setIsQuickSaleOpen(true)}
-          >
-            <TrendingUp className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">Quick Sale</span>
-          </Button>
-        </div>
-      </StandardCard>
-
       {/* Dialog: Low Stock Full List */}
       <Dialog open={openLowStock} onOpenChange={setOpenLowStock}>
         <DialogContent className="max-w-2xl">
@@ -451,7 +520,7 @@ export const Dashboard = () => {
                 {filteredLowStock.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center text-sm text-gray-500">
-                      No items match the current search.
+                      No items match the current filters.
                     </TableCell>
                   </TableRow>
                 )}
@@ -491,7 +560,57 @@ export const Dashboard = () => {
                 {filteredPendingOrders.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center text-sm text-gray-500">
-                      No orders match the current search.
+                      No orders match the current filters.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Insurance Claims Full List */}
+      <Dialog open={openClaims} onOpenChange={setOpenClaims}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Insurance Claims</DialogTitle>
+          </DialogHeader>
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Claim ID</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-28 text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredClaims.map(c => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.id}</TableCell>
+                    <TableCell>{c.patient}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          c.status === "Approved"
+                            ? "default"
+                            : c.status === "Rejected"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {c.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{c.amount}</TableCell>
+                  </TableRow>
+                ))}
+                {filteredClaims.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-sm text-gray-500">
+                      No claims match the current search.
                     </TableCell>
                   </TableRow>
                 )}
