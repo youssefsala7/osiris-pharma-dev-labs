@@ -25,6 +25,9 @@ import {
   Menu,
   X,
   Image as ImageIcon,
+  MessageCircle,
+  Mail,
+  Send,
 } from "lucide-react";
 import {
   Accordion,
@@ -49,6 +52,7 @@ type NavItem = {
   label: string;
   icon: any;
   notifications?: number;
+  isNew?: boolean;
 };
 
 type NavGroup = {
@@ -79,6 +83,14 @@ const groups: NavGroup[] = [
       { id: "customers", label: "Customers", icon: Users },
       { id: "user-management", label: "User Management", icon: UserCheck },
     ],
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    items: [
+      { id: "marketing", label: "Marketing Hub", icon: Send, isNew: true },
+    ],
+    defaultOpen: false,
   },
   {
     id: "finance",
@@ -154,18 +166,32 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
           {(!collapsed || isMobile) && (
             <>
               <span className="ml-3 flex-1 text-left">{item.label}</span>
-              {item.notifications && item.notifications > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="ml-2 h-5 min-w-[20px] px-1 flex items-center justify-center text-xs"
-                >
-                  {item.notifications > 9 ? "9+" : item.notifications}
-                </Badge>
-              )}
+              <div className="flex items-center space-x-1">
+                {item.isNew && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 animate-pulse">
+                    NEW
+                  </Badge>
+                )}
+                {item.notifications && item.notifications > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="h-5 min-w-[20px] px-1 flex items-center justify-center text-xs"
+                  >
+                    {item.notifications > 9 ? "9+" : item.notifications}
+                  </Badge>
+                )}
+              </div>
             </>
           )}
-          {collapsed && !isMobile && item.notifications && item.notifications > 0 && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+          {collapsed && !isMobile && (
+            <>
+              {item.notifications && item.notifications > 0 && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+              )}
+              {item.isNew && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+              )}
+            </>
           )}
         </div>
       </Button>
@@ -175,7 +201,12 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
       return (
         <Tooltip key={item.id}>
           <TooltipTrigger asChild>{buttonEl}</TooltipTrigger>
-          <TooltipContent side="right">{item.label}</TooltipContent>
+          <TooltipContent side="right">
+            <div className="flex items-center space-x-2">
+              <span>{item.label}</span>
+              {item.isNew && <Badge variant="secondary" className="text-xs">NEW</Badge>}
+            </div>
+          </TooltipContent>
         </Tooltip>
       );
     }
