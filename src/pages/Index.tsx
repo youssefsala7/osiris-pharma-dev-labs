@@ -16,6 +16,7 @@ import { Notifications } from "@/components/Notifications";
 import { DrugInteractions } from "@/components/DrugInteractions";
 import { InsuranceClaims } from "@/components/InsuranceClaims";
 import { AuditLogs } from "@/components/AuditLogs";
+import EmailMarketing from "@/components/marketing/EmailMarketing";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -52,6 +53,8 @@ const Index = () => {
         return <AuditLogs />;
       case "reports":
         return <Reports />;
+      case "marketing-email":
+        return <EmailMarketing />;
       case "settings":
         return <Settings />;
       default:

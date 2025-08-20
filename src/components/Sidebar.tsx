@@ -25,6 +25,7 @@ import {
   Menu,
   X,
   Image as ImageIcon,
+  Mail,
 } from "lucide-react";
 import {
   Accordion,
@@ -88,6 +89,14 @@ const groups: NavGroup[] = [
       { id: "insurance-claims", label: "Insurance Claims", icon: CreditCard, notifications: 3 },
       { id: "reports", label: "Reports", icon: BarChart3 },
     ],
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    items: [
+      { id: "marketing-email", label: "Email Campaigns", icon: Mail },
+    ],
+    defaultOpen: false,
   },
   {
     id: "compliance",
@@ -344,7 +353,7 @@ export const Sidebar = ({ currentPage, onPageChange }: SidebarProps) => {
         {/* Mobile Sidebar */}
         <div
           className={cn(
-            "fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-50 md:hidden transition-transform duration-300 ease-in-out",
+            "fixed left-0 top-0 h_full w-64 bg-white border-r border-gray-200 z-50 md:hidden transition-transform duration-300 ease-in-out",
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
